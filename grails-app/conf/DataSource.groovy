@@ -12,6 +12,8 @@ hibernate {
     hibernate.id.new_generator_mappings = true
 }
 // environment specific settings
+
+
 environments {
     development {
         dataSource {
@@ -44,10 +46,12 @@ environments {
     }
 }
 
+
+
 grails {
     mongo {
         host = "localhost"
-        port = 27107
+        port = 27017
         databaseName = "travomate"
     }
 }

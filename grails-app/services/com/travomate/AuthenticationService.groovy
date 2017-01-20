@@ -62,7 +62,11 @@ class AuthenticationService {
             newUser.isExternalLogin = postParams.isExternalLogin != null ? postParams.isExternalLogin : false
             newUser.externalAuthServiceName =  postParams.oAuthServiceName?:null
             newUser.password = postParams.password?:null
-            newUser.save(flush: true, failOnError: true)
+            newUser = newUser.save(flush: true, failOnError: true)
+
+            UserProfile userProfile = new UserProfile()
+            userProfile.user = newUser
+            userProfile.save(flush: true, failOnError: true)
         } else {
             if(newUser.isContactVerified == false){
                 userExist = 1
@@ -72,5 +76,10 @@ class AuthenticationService {
         }
 
         return userExist
+    }
+
+    public void deleteSession(String sid){
+        AuthenticatedSession asession = AuthenticatedSession.findBySid(sid)
+        asession.delete()
     }
 }

@@ -64,6 +64,7 @@ grails.project.dependency.resolution = {
         compile ':cache:1.0.1'
 //        compile ':mongodb:6.0.5'
 //        compile 'org.grails.plugins:mongodb'
+        compile ":mail:1.0.1"
         compile ":spring-security-core:1.2.7.3"
         compile ':mongodb:1.1.0.GA'
     }

@@ -6,9 +6,10 @@ import com.travomate.security.AuthenticatedSession
 
 class APIFilters {
 
-    def authenticationService
 
     def filters = {
+
+
         all(uri:'/api/**', uriExclude:'/api/login') {
 
             before = {
@@ -37,6 +38,9 @@ class APIFilters {
             afterView = { Exception e ->
 
             }
+
+
         }
+
     }
 }

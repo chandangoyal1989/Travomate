@@ -96,3 +96,17 @@ grails.plugins.springsecurity.userLookup.authorityJoinClassName = 'com.travomate
 grails.plugins.springsecurity.authority.className = 'com.travomate.Role'
 grails.plugins.springsecurity.requestMap.className = 'com.travomate.UserRole'
 grails.plugins.springsecurity.securityConfigType = 'Requestmap'
+
+
+grails {
+    mail {
+        host = "smtp.gmail.com"
+        port = 465
+        username = "travomateotp@gmail.com"
+        password = "1travel2"
+        props = ["mail.smtp.auth":"true",
+                 "mail.smtp.socketFactory.port":"465",
+                 "mail.smtp.socketFactory.class":"javax.net.ssl.SSLSocketFactory",
+                 "mail.smtp.socketFactory.fallback":"false"]
+    }
+}
