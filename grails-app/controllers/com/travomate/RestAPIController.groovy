@@ -570,7 +570,13 @@ class RestAPIController extends Rest{
 
     }
 
-
+    def getTripReview(){
+        Long userId = params.userid != null ? Long.parseLong(params.userid) : null
+        Expando tripReviewExpando = new Expando()
+        tripReviewExpando.review = restAPIService.getTripReviews(userId)
+        JSON results = tripReviewExpando.properties as JSON
+        success(results)
+    }
     def saveTripReview(){
         def postParams = JSON.parse(request.JSON.toString())
         Long userId = postParams.userid ? Long.parseLong(postParams.userid) : null

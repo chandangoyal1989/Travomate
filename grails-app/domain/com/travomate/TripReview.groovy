@@ -2,6 +2,7 @@ package com.travomate
 
 class TripReview {
 
+    User user;
     String title;
     String tripCoverPicLoc;
     String timeToVisit;
@@ -9,6 +10,7 @@ class TripReview {
     String tripDescription;
 
     static constraints = {
+        user(nullable: true)
         title(nullable: true)
         tripCoverPicLoc(nullable: true)
         timeToVisit(nullable: true)
