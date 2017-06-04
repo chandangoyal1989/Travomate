@@ -251,7 +251,7 @@ class RestAPIService {
             userProfile.name = postParams.name ?: userProfile.name
             userProfile.nationality = postParams.nationality ?: userProfile.nationality
             userProfile.occupation = postParams.occupation ?: userProfile.occupation
-            userProfile.languages = postParams.languages ? postParams.languages.join(',') : userProfile.languages
+            userProfile.languages = postParams.languages ? postParams.languages*.toString().join(',').toString() : userProfile.languages
             userProfile.userIntro = postParams.userIntro ?: userProfile.userIntro
             userProfile.city = postParams.city ?: userProfile.city
             userProfile.state = postParams.state ?: userProfile.state
