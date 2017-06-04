@@ -1,3 +1,5 @@
+import org.apache.log4j.Level
+
 // locations to search for config files that get merged into the main config;
 // config files can be ConfigSlurper scripts, Java properties files, or classes
 // in the classpath in ConfigSlurper format
@@ -69,6 +71,9 @@ environments {
     }
 }
 
+def logpath = "/usr/travomate/logs/travomate.log"
+grails.config.logPath= logpath
+
 // log4j configuration
 log4j = {
     // Example of changing the log pattern for the default console appender:
@@ -88,6 +93,16 @@ log4j = {
            'org.springframework',
            'org.hibernate',
            'net.sf.ehcache.hibernate'
+
+    appenders {
+        rollingFile name: 'R', file:grails.config.logPath, layout:pattern(conversionPattern: '%d: Sid-%X{sid} %-5p %c{2} - %m%n'), maxFileSize: '5MB',threshold: Level.INFO
+        rollingFile name: 'stacktrace', file:'stacktrace.log', maxFileSize: '5MB',maxBackupIndex: 5
+
+
+    }
+    root {
+        info 'R'
+    }
 }
 
 // Added by the Spring Security Core plugin:

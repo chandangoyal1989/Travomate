@@ -33,6 +33,7 @@ grails.project.dependency.resolution = {
 
         mavenRepo "http://repo.grails.org/grails/repo/"
         mavenRepo "http://repo.grails.org/grails/core"
+        mavenRepo "https://repo.grails.org/grails/plugins/"
 
         // uncomment these (or add new ones) to enable remote dependency resolution from public Maven repositories
         //mavenRepo "http://snapshots.repository.codehaus.org"
@@ -45,6 +46,13 @@ grails.project.dependency.resolution = {
         // specify dependencies here under either 'build', 'compile', 'runtime', 'test' or 'provided' scopes e.g.
 
          runtime 'mysql:mysql-connector-java:5.1.22'
+         compile 'org.mongodb:mongo-java-driver:2.13.3'
+
+
+//        compile 'org.grails:grails-datastore-gorm:3.0.4.RELEASE'
+//        compile 'org.grails:grails-datastore-core:3.0.4.RELEASE'
+//        test 'org.grails:grails-datastore-simple:3.0.4.RELEASE'
+
     }
 
     plugins {
@@ -66,6 +74,7 @@ grails.project.dependency.resolution = {
 //        compile 'org.grails.plugins:mongodb'
         compile ":mail:1.0.1"
         compile ":spring-security-core:1.2.7.3"
-        compile ':mongodb:1.1.0.GA'
+        compile ':mongodb:1.3.3'
+//        compile ':mongodb:1.0.0.RC4'
     }
 }

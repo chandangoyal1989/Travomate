@@ -1,15 +1,11 @@
 package com.travomate
 
-import com.travomate.dto.UserDTO
 import com.travomate.dto.UserProfileDTO
 import com.travomate.security.UserOTP
+
 import com.travomate.tool.UserDTOMapper
 import com.travomate.tool.UserProfileDTOMapper
-import org.springframework.web.multipart.MultipartHttpServletRequest
-import org.springframework.web.multipart.support.DefaultMultipartHttpServletRequest
 import org.springframework.web.multipart.commons.CommonsMultipartFile
-
-import javax.jws.soap.SOAPBinding
 
 class RestAPIService {
 
@@ -23,6 +19,27 @@ class RestAPIService {
         return User.get(id)
     }
 
+    List<User> getListOfUsersByListOfId(List<Long> userIdList){
+        return User.findAllByIdInList(userIdList)
+
+    }
+
+
+    List<UserProfile> getListOfUserProfilesByListOfUser(List<User> userList){
+        return UserProfile.findAllByUserInList(userList)
+    }
+
+    UserProfile getUserProfileByName(String name){
+        return UserProfile.findByName(name)
+    }
+
+
+    List<UserProfile> getUserProfileByNameLike(String name){
+        return UserProfile.findAllByNameIlike(name)
+//        return UserProfile.findAllByNameLike(name)
+    }
+
+
     public UserProfile getProfile(User user){
         UserProfile profile = UserProfile.findByUser(user)
         return profile
@@ -30,6 +47,10 @@ class RestAPIService {
 
     public List<UserFriends> getUserFriends(UserProfile userProfile){
         return UserFriends.findAllByProfileUser(userProfile)
+    }
+
+    public List<UserProfileImage> getListOfImagesForUser(User user, String imageType){
+        return UserProfileImage.findAllByUserAndImageType(user, imageType)
     }
 
     String getUserOTP(User user, String source){
@@ -134,14 +155,19 @@ class RestAPIService {
         // Send SMS API
         String mainUrl = Constants.SMS_URL
 
+
+
         // Prepare parameter string
         StringBuilder sbPostData = new StringBuilder(mainUrl)
         sbPostData.append("authkey=" + authkey)
-        sbPostData.append("&mobiles=" + (countryCode + mMobileNo))
+        sbPostData.append("&mobiles=" + (mMobileNo))
         sbPostData.append("&message=" + encoded_message)
         sbPostData.append("&route=" + route)
         sbPostData.append("&sender=" + senderId)
         sbPostData.append("&country=" + countryCode)
+
+
+
 
         log.info("EmailID ######################## generateMobileAlert" + mMobileNo)
         // final string
@@ -167,19 +193,52 @@ class RestAPIService {
     }
 
 
-    public Boolean saveImage(User user, String picType, byte[] photo){
+    private void saveImageFileToSystem(String fileImgLoc, CommonsMultipartFile fileDescriptor){
+        File file = new File(fileImgLoc)
+        if(!file.exists()){
+            file.mkdirs()
+        }
+        fileDescriptor.transferTo(new File(fileImgLoc + "${fileDescriptor.originalFilename}"))
+    }
+
+
+    public Boolean saveImage(User user, String picType, CommonsMultipartFile photo){
+        String picName = photo.originalFilename
+        String imageBaseDir = Constants.IMAGE_BASE_DIR
+        String imageLoc = null
         UserProfile userProfile = UserProfile.findByUser(user)
-        System.out.println("pic type : "+picType)
         if(Constants.PROFILE_TYPE_IMAGE.equalsIgnoreCase(picType)){
-            userProfile.profileImage = photo
+            imageLoc = imageBaseDir + user.id + Constants.FILE_PATH_DELIMITER  + Constants.PROFILE_IMAGE_DIR + Constants.FILE_PATH_DELIMITER
+            userProfile.profileImageLoc = imageLoc + picName
         } else if(Constants.COVER_PIC_TYPE_IMAGE.equalsIgnoreCase(picType)){
-            userProfile.coverImage = photo
+            imageLoc = imageBaseDir + user.id + Constants.FILE_PATH_DELIMITER  + Constants.PROFILE_COVER_IMAGE_DIR + Constants.FILE_PATH_DELIMITER
+            userProfile.coverImageLoc = imageLoc + picName
         } else if(Constants.ID_PROOF_TYPE_IMAGE.equalsIgnoreCase(picType)){
-            userProfile.idProof = photo
+            imageLoc = imageBaseDir + user.id + Constants.FILE_PATH_DELIMITER  + Constants.ID_PROOF_IMAGE_DIR + Constants.FILE_PATH_DELIMITER
+            userProfile.idProofLoc = imageLoc + picName
         } else {
             return false
         }
+        log.info("user id : "+user.id+" pictype : "+picType+" picName : "+picName + " imageloc : "+imageLoc)
         userProfile.save(flush: true, failOnError: true)
+
+        //save image to user_profile_image table
+        UserProfileImage userProfileImage = UserProfileImage.findByUserAndImageTypeAndInUse(user, picType, true)
+        if(userProfileImage != null){
+            userProfileImage.inUse = false
+            userProfileImage.save(failOnError: true, flush: true)
+
+        }
+        userProfileImage = new UserProfileImage()
+        userProfileImage.imageLoc = imageLoc
+        userProfileImage.inUse = true
+        userProfileImage.user = user
+        userProfileImage.imageType = picType
+        userProfileImage.save(failOnError: true, flush: true)
+
+
+        saveImageFileToSystem(imageLoc, photo)
+
         return true
     }
 
@@ -187,12 +246,18 @@ class RestAPIService {
     public void createOrModifyProfile(User user, def postParams){
         UserProfile userProfile = UserProfile.findByUser(user)
         System.out.println("createOrModifyProfile post params : "+postParams)
+        System.out.println("languages : "+postParams.languages?.join(","))
         if(userProfile != null){
             userProfile.name = postParams.name ?: userProfile.name
             userProfile.nationality = postParams.nationality ?: userProfile.nationality
             userProfile.occupation = postParams.occupation ?: userProfile.occupation
-            userProfile.languages = postParams.languages ? postParams.languages.join(",") : userProfile.languages
+            userProfile.languages = postParams.languages ? postParams.languages.join(',') : userProfile.languages
             userProfile.userIntro = postParams.userIntro ?: userProfile.userIntro
+            userProfile.city = postParams.city ?: userProfile.city
+            userProfile.state = postParams.state ?: userProfile.state
+            userProfile.country = postParams.country ?: userProfile.country
+            userProfile.user.dateOfBirth = postParams.dob ?: userProfile.user.dateOfBirth
+            userProfile.user.gender = postParams.gender ?: userProfile.user.gender
 //            userProfile.idProof = request.getFile('idProof')? request.getFile('idProof').bytes : userProfile.idProof
 //            userProfile.coverImage = request.getFile('coverImage')? request.getFile('coverImage').bytes : userProfile.coverImage
 //            userProfile.profileImage = request.getFile('profileImage')? request.getFile('profileImage').bytes : userProfile.profileImage
@@ -201,10 +266,15 @@ class RestAPIService {
             userProfile = new UserProfile()
             userProfile.user = user
             userProfile.name = postParams.name ?: null
-            userProfile.nationality = postParams ?: null
-            userProfile.occupation = postParams ?: null
-            userProfile.languages = postParams.languages ?: null
+            userProfile.nationality = postParams.nationality ?: null
+            userProfile.occupation = postParams.occupation ?: null
+            userProfile.languages = postParams.languages ? postParams.languages.join(',') : null
             userProfile.userIntro = postParams.userIntro ?: null
+            userProfile.city = postParams.city ?: null
+            userProfile.state = postParams.state ?: null
+            userProfile.country = postParams.country ?: null
+            userProfile.user.dateOfBirth = postParams.dob ?: null
+            userProfile.user.gender = postParams.gender ?: null
 //            userProfile.idProof = request.getFile('idProof')? request.getFile('idProof').bytes : null
 //            userProfile.coverImage = request.getFile('coverImage') ? request.getFile('coverImage').bytes : null
 //            userProfile.profileImage = request.getFile('profileImage') ? request.getFile('profileImage').bytes : null
@@ -245,6 +315,13 @@ class RestAPIService {
             UserFriendRequest friendRequest = UserFriendRequest.findByRecipientAndSender(recipient, sender)
             friendRequest.delete()
         }
+    }
+
+
+    public List<UserFriendRequest> getFriendRequests(Long profileUserId){
+        log.info("user profile : "+User.get(profileUserId))
+        return UserFriendRequest.findAllByRecipient(User.get(profileUserId))
+
     }
 
 
@@ -317,8 +394,73 @@ class RestAPIService {
     public void deleteProfile(User user){
         UserProfile userProfile = UserProfile.findByUser(user)
         System.out.println("delete profile user id  : "+user.id)
+        UserFriends userFriends = UserFriends.findByProfileUser(userProfile)
+        userFriends.delete()
         userProfile.delete()
     }
+
+
+    public void changePassword(User user, String newPsssword){
+        user.password = newPsssword
+        user.save(flush: true, failOnError: true)
+    }
+
+
+    public void saveTripReview(def postParams){
+        TripReview tripReview = null
+        if(postParams.tripReviewId != null){
+            tripReview = TripReview.get(Long.parseLong(postParams.tripReviewId))
+        } else {
+            tripReview = new TripReview()
+         }
+
+        tripReview.routeToTake = postParams.routeToTake
+        tripReview.timeToVisit = postParams.timeToVisit
+        tripReview.tripDescription = postParams.tripDescription
+        tripReview.title = postParams.title
+        tripReview.save(flush: true, failOnError: true)
+    }
+
+
+    public Boolean saveTripReviewImage(User user, String picType, CommonsMultipartFile photo){
+        String picName = photo.originalFilename
+        String imageBaseDir = Constants.IMAGE_BASE_DIR
+        String imageLoc = null
+        UserProfile userProfile = UserProfile.findByUser(user)
+        if(Constants.TRIP_REVIEW_COVER_IMAGE.equalsIgnoreCase(picType)){
+            imageLoc = imageBaseDir + user.id + Constants.FILE_PATH_DELIMITER  + Constants.TRIP_REVIEW_IMAGE_DIR + Constants.FILE_PATH_DELIMITER
+            userProfile.profileImageLoc = imageLoc + picName
+        } else if(Constants.TRIP_REVIEW_ALBUM.equalsIgnoreCase(picType)){
+            String albumName =
+            imageLoc = imageBaseDir + user.id + Constants.FILE_PATH_DELIMITER  + Constants.PROFILE_COVER_IMAGE_DIR + Constants.FILE_PATH_DELIMITER +
+            userProfile.coverImageLoc = imageLoc + picName
+        } else {
+            return false
+        }
+        log.info("user id : "+user.id+" pictype : "+picType+" picName : "+picName + " imageloc : "+imageLoc)
+        userProfile.save(flush: true, failOnError: true)
+
+        //save image to user_profile_image table
+        UserProfileImage userProfileImage = UserProfileImage.findByUserAndImageTypeAndInUse(user, picType, true)
+        if(userProfileImage != null){
+            userProfileImage.inUse = false
+            userProfileImage.save(failOnError: true, flush: true)
+
+        }
+        userProfileImage = new UserProfileImage()
+        userProfileImage.imageLoc = imageLoc
+        userProfileImage.inUse = true
+        userProfileImage.user = user
+        userProfileImage.imageType = picType
+        userProfileImage.save(failOnError: true, flush: true)
+
+
+        saveImageFileToSystem(imageLoc, photo)
+
+        return true
+    }
+
+
 
 
 }

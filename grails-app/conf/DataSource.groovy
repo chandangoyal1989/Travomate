@@ -50,8 +50,15 @@ environments {
 
 grails {
     mongo {
-        host = "localhost"
+//        host = "localhost"
+//        port = 27017
+//        databaseName = "travomate"
+
+        host = "122.160.30.50"
         port = 27017
         databaseName = "travomate"
+        username = "manisha"
+        password = "root1234"
     }
 }
+

@@ -1,13 +1,10 @@
 package com.travomate
 
-import com.travomate.dto.UserProfileDTO
-import com.travomate.tool.UserProfileDTOMapper
+import com.travomate.dto.*
+import com.travomate.tool.*
 import grails.converters.JSON
-import org.springframework.web.multipart.MultipartHttpServletRequest
+import org.bson.types.ObjectId
 import org.springframework.web.multipart.commons.CommonsMultipartFile
-
-import javax.imageio.ImageIO
-import java.awt.image.BufferedImage
 
 class RestAPIController extends Rest{
 
@@ -17,6 +14,13 @@ class RestAPIController extends Rest{
     def mailService
 
     UserProfileDTOMapper userProfileDTOMapper = UserProfileDTOMapper.getInstance()
+    UserFriendRequestDTOMapper userFriendRequestDTOMapper = UserFriendRequestDTOMapper.getInstance()
+    NotificationDTOMapper notificationDTOMapper = NotificationDTOMapper.getInstance()
+    TravellerPostDTOMapper travellerPostDTOMapper = TravellerPostDTOMapper.getInstance()
+    GuidePostDTOMapper guidePostDTOMapper = GuidePostDTOMapper.getInstance()
+    CommentDTOMapper commentDTOMapper = CommentDTOMapper.getInstance()
+    LikeDTOMapper likeDTOMapper = LikeDTOMapper.getInstance()
+    UserProfileImageDTOMapper userProfileImageDTOMapper = UserProfileImageDTOMapper.getInstance()
 
     def index() {}
 
@@ -178,11 +182,9 @@ class RestAPIController extends Rest{
             System.out.println("params : "+params)
             CommonsMultipartFile imageFile = request.getFile('imageFile')
             byte[] photo = imageFile.bytes
-            Boolean imageSaved = restAPIService.saveImage(user, picType, photo)
+            Boolean imageSaved = restAPIService.saveImage(user, picType, imageFile)
            if(imageSaved) {
-               response.setHeader('Content-length', photo.length.toString())
-               response.contentType="image/jpg" //or whatever the format is...
-               response.outputStream << photo
+               success("Profile Image uploaded successfully")
            } else {
                error("Invalid pic type")
            }
@@ -194,7 +196,7 @@ class RestAPIController extends Rest{
 
     def createProfile(){
         def postParams = JSON.parse(request.JSON.toString())
-        System.out.println("post params : "+postParams)
+        log.info("post params : "+postParams)
         Long userId = params.userid != null ? Long.parseLong(params.userid) : null
         User user = User.get(userId)
         if(userId != null){
@@ -226,10 +228,12 @@ class RestAPIController extends Rest{
         if(user != null) {
             String picType = params.picType
             UserProfile userProfile = UserProfile.findByUser(user)
-            byte[] photo = userProfile."${picType}"
-            response.setHeader('Content-length', photo.length.toString())
-            response.contentType="image/jpg" //or whatever the format is...
-            response.outputStream << photo
+            List<UserProfileImage> userProfileImageList = restAPIService.getListOfImagesForUser(user, picType)
+            UserProfileImageDTO[] userProfileImageDTOs = userProfileImageDTOMapper.mapUserProfileImageListToDTOArray(userProfileImageList)
+            Expando imageResponseExpando = new Expando()
+            imageResponseExpando.userImages = userProfileImageDTOs
+            JSON results = imageResponseExpando.properties as JSON
+            success(results)
         } else {
             notFound("User does not exist")
         }
@@ -257,7 +261,7 @@ class RestAPIController extends Rest{
         def postParams = JSON.parse(request.JSON.toString())
         Long fromUserId = postParams.fromUserId != null ? Long.parseLong(postParams.fromUserId + "") : null
         Long toUserId = postParams.toUserId != null ? Long.parseLong(postParams.toUserId + "") : null
-        System.out.println("from user id : "+fromUserId+" to user id : "+toUserId)
+        log.info("from user id : "+fromUserId+" to user id : "+toUserId)
         if(fromUserId != null && toUserId != null){
             Boolean isSaved = restAPIService.saveFriendRequest(fromUserId, toUserId)
             if(isSaved){
@@ -275,7 +279,7 @@ class RestAPIController extends Rest{
         def postParams = JSON.parse(request.JSON.toString())
         Long fromUserId = postParams.fromUserId != null ? Long.parseLong(postParams.fromUserId + "") : null
         Long toUserId = postParams.toUserId != null ? Long.parseLong(postParams.toUserId + "") : null
-        System.out.println("from user id : "+fromUserId+" to user id : "+toUserId)
+        log.info("from user id : "+fromUserId+" to user id : "+toUserId)
         if(fromUserId != null && toUserId != null){
             Boolean isSaved = restAPIService.saveFriendship(fromUserId, toUserId)
             if(isSaved){
@@ -283,6 +287,22 @@ class RestAPIController extends Rest{
             } else {
                 error("Incorrect information to accept the friend request")
             }
+        } else {
+            error("Incorrect user information")
+        }
+    }
+
+
+    def showFriendRequests(){
+        Long profileUserId = params.profileUserId != null ? Long.parseLong(params.profileUserId) : null
+        if(profileUserId != null){
+            List<UserFriendRequest> friendRequestList = restAPIService.getFriendRequests(profileUserId)
+            UserFriendRequestDTO[] userFriendRequestDTOs =  userFriendRequestDTOMapper.mapUserFriendRequestListToUserFriendRequestDTOArray(friendRequestList)
+            Expando friendRequestResponse = new Expando()
+            friendRequestResponse.friendRequest = userFriendRequestDTOs
+            friendRequestResponse.profileUserId = profileUserId
+            JSON results = friendRequestResponse.properties as JSON
+            success(results)
         } else {
             error("Incorrect user information")
         }
@@ -333,10 +353,256 @@ class RestAPIController extends Rest{
 
 
     def insertMongo(){
-        System.out.println("in insertMongo action")
-        mongoService.saveTravellerPost()
+        log.info("in insertMongo action")
+        mongoService.insertMongo()
         success("Mongo object saved")
     }
+
+    def postTravellerFeed() {
+        log.info(" in post feed")
+        def postParams = JSON.parse(request.JSON.toString())
+        ObjectId postId = mongoService.createOrModifyTravellerPost(postParams, null)
+        mongoService.sendNotification(postId.toString(), postParams, Constants.PostType.TRAVELLER)
+        Expando resultExpando = new Expando()
+        resultExpando.postId = postId.toString()
+        JSON results = resultExpando.properties as JSON
+        success(results, "Traveller Post saved")
+
+    }
+
+    def deleteTravellerFeed(){
+//        Long postId = params.postId != null ? Long.parseLong(params.postId + "") : null
+        String postId = params.postId
+        if(postId != null) {
+            mongoService.deleteNotifications(postId)
+            mongoService.deleteTravellerPost(postId)
+        } else {
+            error("Post Id is missing")
+        }
+    }
+
+    def editTravellerPost(){
+        def postId = new ObjectId(params.postId)
+        def postParams = JSON.parse(request.JSON.toString())
+        if(postId != null) {
+            mongoService.createOrModifyTravellerPost(postParams, postId)
+            success("Traveller post modified")
+        } else {
+            error("Post Id is missing")
+        }
+    }
+
+    def getTravellerFeeds(){
+        log.info("getTravellerFeeds")
+        def topPosts = mongoService.getLatestTravellerFeeds(Integer.parseInt(params.offset))
+        TravellerPostDTO[] travellerPostDTOs = travellerPostDTOMapper.mapTravellerPostListToTravellerPostDTOArray(topPosts)
+        Expando travellerFeedResponse = new Expando()
+        travellerFeedResponse.travellerFeed = travellerPostDTOs
+        JSON results = travellerFeedResponse.properties as JSON
+        success(results)
+    }
+
+
+    def postGuideFeed(){
+        log.info(" in postGuideFeed")
+        def postParams = JSON.parse(request.JSON.toString())
+        def guidePostId = mongoService.createOrModifyGuidePost(postParams, null)
+        mongoService.sendNotification(guidePostId.toString(), postParams, Constants.PostType.GUIDE)
+        Expando resultExpando = new Expando()
+        resultExpando.postId = guidePostId.toString()
+        JSON results = resultExpando.properties as JSON
+        success(results, "Guide Post saved")
+    }
+
+    def deleteGuidePost(){
+        log.info("In deleteGuidePost")
+        String postId = params.postId
+        if(postId != null){
+            mongoService.deleteNotifications(postId)
+            mongoService.deleteGuidePost(postId)
+            success("Guide Post deleted")
+        } else {
+            error("Guide  Post Id is missing")
+        }
+    }
+
+    def getGuideFeeds(){
+        log.info("getGuideFeeds")
+        def topPosts = mongoService.getTopGuideFeeds(Integer.parseInt(params.offset))
+        GuidePostDTO[] guidePostDTOs = guidePostDTOMapper.mapGuidePostListToGuidePostDTOArray(topPosts)
+        Expando guideFeedResponse = new Expando()
+        guideFeedResponse.guideFeed = guidePostDTOs
+        JSON results = guideFeedResponse.properties as JSON
+        success(results)
+    }
+
+
+    def modifyGuidePost(){
+        log.info("In modifyGuidePost")
+        def postId = new ObjectId(params.postId)
+        def postParams = JSON.parse(request.JSON.toString())
+        if(postId != null){
+            mongoService.createOrModifyGuidePost(postParams, postId)
+            success("Modified Guide Post")
+        } else {
+            error("Guide Post Id is missing")
+        }
+    }
+
+    def storeUserLocation(){
+        log.info("In storeUserLocation")
+        def postParams = JSON.parse(request.JSON.toString())
+        mongoService.saveUserLatLong(postParams)
+        success("User Location saved successfully")
+
+    }
+
+    def findNearUsers(){
+
+        def postParams = JSON.parse(request.JSON.toString())
+        Double[] location = [Double.parseDouble(postParams.longitude + ""), Double.parseDouble(postParams.latitude + "")];
+        List<Long> nearbyUserIds = mongoService.nearSphereWIthMaxDistance(location)
+        log.info("nearbyUserIds : "+nearbyUserIds)
+        List<User> nearByUsers = restAPIService.getListOfUsersByListOfId(nearbyUserIds)
+        List<UserProfile> userProfileList = restAPIService.getListOfUserProfilesByListOfUser(nearByUsers)
+        UserProfileDTO[] userProfileDTOs = userProfileDTOMapper.mapUserProfileListToUserProfileDTOArray(userProfileList)
+        Expando nearbyUsersResponse = new Expando()
+        nearbyUsersResponse.nearbyUsers = userProfileDTOs
+        JSON results = nearbyUsersResponse.properties as JSON
+        success(results)
+
+    }
+
+
+    def userNotification(){
+        def postParams = JSON.parse(request.JSON.toString())
+        Long userId = Long.parseLong(params.profileUserId + "")
+        List<Notification> userNotifications = mongoService.getUserNotifications(userId)
+        log.info("userNotifications for ID : "+userId + " is "+userNotifications)
+        NotificationDTO[] notificationDTOs =  notificationDTOMapper.mapNotificationListToNotificationDTOArray(userNotifications)
+        Expando userNotificationsResponse = new Expando()
+        userNotificationsResponse.notifications = notificationDTOs
+        userNotificationsResponse.profileUserId = userId
+        JSON results = userNotificationsResponse.properties as JSON
+        success(results)
+    }
+
+    def searchUser(){
+        String userName = params.name
+        List<UserProfile> userProfile = restAPIService.getUserProfileByNameLike(userName)
+        UserProfileDTO[] userProfileDTOs = userProfileDTOMapper.mapUserProfileListToUserProfileDTOArray(userProfile)
+        Expando userProfileResponse = new Expando()
+        userProfileResponse.userProfile = userProfileDTOs
+        userProfileResponse.name = userName
+        JSON results = userProfileResponse.properties as JSON
+        success(results)
+    }
+
+
+    def addComment(){
+        def postParams = JSON.parse(request.JSON.toString())
+        String postId = params.postId
+        mongoService.saveComment(postId, postParams)
+        success("Comments added to Post")
+    }
+
+
+    def getComments(){
+        String postId = params.postId
+        List<Comment> commentList = mongoService.getCommentListForPost(postId)
+        List<Expando> commentExpandoList = new ArrayList<Expando>()
+        Expando commentExpando = null
+        commentList?.each{ comment ->
+            commentExpando = new Expando()
+            commentExpando.id = comment.id.toString()
+            commentExpando.commentText = comment.commentText
+            commentExpando.postDate = comment.postDate
+            commentExpando.postedBy = UserProfile.findByUser(User.get(comment.postedBy))
+            List<Comment> replies = Comment.findAllByPostIdAndParentCommentId(comment.id.toString())
+            commentExpando.replies = commentDTOMapper.mapCommentListToCommentDTOArray(replies)
+
+            //Add comment likes
+            List<Like> commentLikes = Like.findAllByLikedObjectIdAndLikedObjectType(comment.id.toString(), Constants.LIKE_COMMENT_STRING)
+            commentExpando.likes = likeDTOMapper.mapLikeListToLikeDTOArray(commentLikes)
+
+            commentExpandoList.add(commentExpando.properties)
+        }
+
+        Expando commentResponse = new Expando()
+        commentResponse.postComments = commentExpandoList
+        JSON results = commentResponse.properties as JSON
+        success(results)
+    }
+
+
+    def addPostLike(){
+        def postParams = JSON.parse(request.JSON.toString())
+        String likedObjectId = params.objectId
+        mongoService.addUserLike(likedObjectId, postParams)
+        success("Like added")
+
+    }
+
+
+    def getPostLikes(){
+        String likedPostId = params.objectId
+        List<Like> postLikes = mongoService.getUserLikesForPost(likedPostId)
+        LikeDTO[] likeDTOs = likeDTOMapper.mapLikeListToLikeDTOArray(postLikes)
+        Expando postLikeExpando = new Expando()
+        postLikeExpando.postLikes = likeDTOs
+        postLikeExpando.postId = likedPostId
+        JSON results = postLikeExpando.properties as JSON
+        success(results)
+    }
+
+
+    def resetPassword(){
+        def postParams = JSON.parse(request.JSON.toString())
+        String newPassword = postParams.password
+        String contact  = postParams.contact
+        User user = User.findByContact(contact)
+        if(user != null) {
+            restAPIService.changePassword(user, newPassword)
+            success("Password reset successfully")
+        } else {
+            notFound("Invalid userid")
+        }
+
+    }
+
+
+    def saveTripReview(){
+        def postParams = JSON.parse(request.JSON.toString())
+        Long userId = postParams.userid ? Long.parseLong(postParams.userid) : null
+        User user = User.get(userId)
+        if(user != null){
+            restAPIService.saveTripReview(postParams)
+            success("Trip Review saved successfully")
+        } else {
+            notFound("Invalid userid")
+        }
+    }
+
+
+    def uploadTripReviewPic(){
+        Long userId = params.userid != null ? Long.parseLong(params.userid + "") : null
+        User user = User.get(userId)
+        if(user != null) {
+            String picType = params.picType
+            log.info("uploadTripReviewPic params : "+params)
+            CommonsMultipartFile imageFile = request.getFile('imageFile')
+            Boolean imageSaved = restAPIService.saveTripReviewImage(user, picType, imageFile)
+            if(imageSaved) {
+                success("Profile Image uploaded successfully")
+            } else {
+                error("Invalid pic type")
+            }
+
+        } else {
+            notFound("User does not exist")
+        }
+    }
+
 
     def logout() {
         authenticationService.deleteSession(params.sid)

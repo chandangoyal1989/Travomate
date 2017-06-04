@@ -24,7 +24,7 @@ class UserDTOMapper {
 
     public UserDTO mapUserToUserDTO(User user){
         if(user == null){
-            user
+            return null
         }
 
         UserDTO userDTO = new UserDTO()
