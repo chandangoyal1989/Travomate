@@ -129,7 +129,7 @@ class UrlMappings {
 			action = [GET: "getTripReview", POST: "saveTripReview"]
 		}
 
-		"/api/tripreview/uploadPic/${userid}/${tripReviewId}/${picType}"(controller: "restAPI") {
+		"/api/tripreview/uploadPic/${userid}/${tripReviewId}/${title}/${picType}"(controller: "restAPI") {
 			action = [POST: "uploadTripReviewPic"]
 		}
 

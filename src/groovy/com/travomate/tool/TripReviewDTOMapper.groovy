@@ -1,8 +1,8 @@
 package com.travomate.tool
 
 import com.travomate.TripReview
+import com.travomate.TripReviewAlbum
 import com.travomate.dto.TripReviewDTO
-
 /**
  * Created by asaxena on 6/4/2017.
  */
@@ -31,14 +31,15 @@ class TripReviewDTOMapper {
             return null
         }
 
+        List<TripReviewAlbum> tripReviewAlbumList = TripReviewAlbum.findAllByTripReview(tripReview)
+
         TripReviewDTO tripReviewDTO = new TripReviewDTO()
         tripReviewDTO.id = tripReview?.id
-        tripReviewDTO.user = userDTOMapper.mapUserToUserDTO(tripReview?.user)
-        tripReviewDTO.title = tripReview?.title
-        tripReviewDTO.tripCoverPicLoc = tripReview?.tripCoverPicLoc
+         tripReviewDTO.title = tripReview?.title
         tripReviewDTO.timeToVisit = tripReview?.timeToVisit
         tripReviewDTO.routeToTake = tripReview?.routeToTake
         tripReviewDTO.tripDescription = tripReview?.tripDescription
+
 
         return tripReviewDTO
 

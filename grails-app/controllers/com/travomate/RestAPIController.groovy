@@ -573,16 +573,18 @@ class RestAPIController extends Rest{
     def getTripReview(){
         Long userId = params.userid != null ? Long.parseLong(params.userid) : null
         Expando tripReviewExpando = new Expando()
-        tripReviewExpando.review = restAPIService.getTripReviews(userId)
+        tripReviewExpando.userTripReviews = restAPIService.getTripReviews(userId)
         JSON results = tripReviewExpando.properties as JSON
         success(results)
     }
+
+
     def saveTripReview(){
         def postParams = JSON.parse(request.JSON.toString())
-        Long userId = postParams.userid ? Long.parseLong(postParams.userid) : null
+        Long userId = params.userid ? Long.parseLong(params.userid) : null
         User user = User.get(userId)
         if(user != null){
-            restAPIService.saveTripReview(postParams)
+            restAPIService.saveTripReview(postParams, userId)
             success("Trip Review saved successfully")
         } else {
             notFound("Invalid userid")
@@ -591,15 +593,23 @@ class RestAPIController extends Rest{
 
 
     def uploadTripReviewPic(){
+
         Long userId = params.userid != null ? Long.parseLong(params.userid + "") : null
         User user = User.get(userId)
         if(user != null) {
             String picType = params.picType
             log.info("uploadTripReviewPic params : "+params)
             CommonsMultipartFile imageFile = request.getFile('imageFile')
-            Boolean imageSaved = restAPIService.saveTripReviewImage(user, picType, imageFile)
+            def postParams = JSON.parse(request.JSON.toString())
+            Long tripReviewId = params.tripReviewId != null ? Long.parseLong(params.tripReviewId + "") : null
+            log.info("tripReviewId "+tripReviewId)
+            TripReview tripReview = restAPIService.saveTripReview(params, userId)
+            Boolean imageSaved = restAPIService.saveTripReviewImage(user, picType, imageFile, tripReview)
+            Expando tripReviewResponse = new Expando()
+            tripReviewResponse.id = tripReview.id
+            JSON results = tripReviewResponse.properties as JSON
             if(imageSaved) {
-                success("Profile Image uploaded successfully")
+                success(results, "Trip Review Image uploaded successfully")
             } else {
                 error("Invalid pic type")
             }

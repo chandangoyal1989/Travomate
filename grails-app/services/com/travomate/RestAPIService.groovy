@@ -1,13 +1,17 @@
 
 package com.travomate
 
+import com.travomate.dto.TripReviewAlbumDTO
 import com.travomate.dto.TripReviewDTO
 import com.travomate.dto.UserProfileDTO
 import com.travomate.security.UserOTP
+import com.travomate.tool.TripReviewAlbumDTOMapper
 import com.travomate.tool.TripReviewDTOMapper
 import com.travomate.tool.UserDTOMapper
 import com.travomate.tool.UserProfileDTOMapper
 import org.springframework.web.multipart.commons.CommonsMultipartFile
+
+import java.text.SimpleDateFormat
 
 class RestAPIService {
 
@@ -16,6 +20,7 @@ class RestAPIService {
     UserProfileDTOMapper userProfileDTOMapper = UserProfileDTOMapper.getInstance()
     UserDTOMapper userDTOMapper = UserDTOMapper.getInstance()
     TripReviewDTOMapper tripReviewDTOMapper = TripReviewDTOMapper.getInstance()
+    TripReviewAlbumDTOMapper tripReviewAlbumDTOMapper = TripReviewAlbumDTOMapper.getInstance()
 
     User getUser(Long id) {
         return User.get(id)
@@ -258,9 +263,6 @@ class RestAPIService {
             userProfile.country = postParams.country ?: userProfile.country
             userProfile.user.dateOfBirth = postParams.dob ?: userProfile.user.dateOfBirth
             userProfile.user.gender = postParams.gender ?: userProfile.user.gender
-//            userProfile.idProof = request.getFile('idProof')? request.getFile('idProof').bytes : userProfile.idProof
-//            userProfile.coverImage = request.getFile('coverImage')? request.getFile('coverImage').bytes : userProfile.coverImage
-//            userProfile.profileImage = request.getFile('profileImage')? request.getFile('profileImage').bytes : userProfile.profileImage
             userProfile.save(flush: true, failOnError: true)
         } else {
             userProfile = new UserProfile()
@@ -275,9 +277,6 @@ class RestAPIService {
             userProfile.country = postParams.country ?: null
             userProfile.user.dateOfBirth = postParams.dob ?: null
             userProfile.user.gender = postParams.gender ?: null
-//            userProfile.idProof = request.getFile('idProof')? request.getFile('idProof').bytes : null
-//            userProfile.coverImage = request.getFile('coverImage') ? request.getFile('coverImage').bytes : null
-//            userProfile.profileImage = request.getFile('profileImage') ? request.getFile('profileImage').bytes : null
             userProfile.save(flush: true, failOnError: true)
         }
     }
@@ -405,7 +404,9 @@ class RestAPIService {
         user.save(flush: true, failOnError: true)
     }
 
-    public List<TripReviewDTO> getTripReviews(Long userId) {
+    public List<Expando> getTripReviews(Long userId) {
+        List<Expando> tripReviewExpandoList = new ArrayList<Expando>()
+        Expando tripReviewExpando = null
         User user = User.get(userId)
         List<TripReview> reviewList
 
@@ -414,57 +415,77 @@ class RestAPIService {
         else
             reviewList = new ArrayList<>()
 
-        List<TripReviewDTO> tripReviewDTOList = tripReviewDTOMapper.mapTripReviewListtoTripReviewDTO(reviewList)
-        return tripReviewDTOList
+        reviewList?.each{ review ->
+            tripReviewExpando = new Expando()
+            TripReviewDTO tripReviewDTO = tripReviewDTOMapper.mapTripReviewToTripReviewDTO(review)
+            List<TripReviewAlbum> tripReviewAlbumList = TripReviewAlbum.findAllByTripReview(review)
+            TripReviewAlbumDTO[] tripReviewAlbumDTOArray = tripReviewAlbumDTOMapper.mapTripReviewAlbumListtoTripReviewAlbumDTO(tripReviewAlbumList)
+            tripReviewExpando.review = tripReviewDTO
+            tripReviewExpando.pics = tripReviewAlbumDTOArray
+            tripReviewExpandoList.add(tripReviewExpando.properties)
+         }
+//        List<TripReviewDTO> tripReviewDTOList = tripReviewDTOMapper.mapTripReviewListtoTripReviewDTO(reviewList)
+        return tripReviewExpandoList
     }
 
-    public void saveTripReview(def postParams) {
+    public TripReview saveTripReview(def params, Long userId) {
         TripReview tripReview = null
-        if (postParams.tripReviewId != null) {
-            tripReview = TripReview.get(Long.parseLong(postParams.tripReviewId))
+        Long tripReviewId = params.tripReviewId != null ? Long.parseLong(params.tripReviewId + "") : null
+        if (tripReviewId != 0) {
+            tripReview = TripReview.get(Long.parseLong(params.tripReviewId))
         } else {
             tripReview = new TripReview()
         }
-        tripReview.user = User.get(postParams?.userid)
-        tripReview.routeToTake = postParams.routeToTake
-        tripReview.timeToVisit = postParams.timeToVisit
-        tripReview.tripDescription = postParams.tripDescription
-        tripReview.title = postParams.title
-        tripReview.save(flush: true, failOnError: true)
+        tripReview.user = User.get(userId)
+        tripReview.routeToTake = params.routeToTake
+        tripReview.timeToVisit = params.timeToVisit
+        tripReview.tripDescription = params.tripDescription
+        tripReview.title = params.title
+        tripReview = tripReview.save(flush: true, failOnError: true)
+        return tripReview
     }
 
 
-    public Boolean saveTripReviewImage(User user, String picType, CommonsMultipartFile photo) {
+    public TripReview saveTripReview(Long tripReviewId){
+        TripReview tripReview = TripReview.get(tripReviewId);
+        if(tripReview == null){
+            tripReview = new TripReview()
+        }
+        tripReview.user = user;
+        tripReview = tripReview.save(flush:true, failOnError: true)
+        return tripReview
+    }
+
+
+    public Boolean saveTripReviewImage(User user, String picType, CommonsMultipartFile photo, TripReview tripReview) {
         String picName = photo.originalFilename
         String imageBaseDir = Constants.IMAGE_BASE_DIR
         String imageLoc = null
-        UserProfile userProfile = UserProfile.findByUser(user)
+
+        TripReviewAlbum tripReviewAlbum = new TripReviewAlbum();
+        tripReviewAlbum.tripReview = tripReview
+        String todaysDate = new SimpleDateFormat("dd-MMM-yyyy").format(new Date());
+        String tripReviewDir = tripReview.title + "_" + todaysDate;
         if (Constants.TRIP_REVIEW_COVER_IMAGE.equalsIgnoreCase(picType)) {
-            imageLoc = imageBaseDir + user.id + Constants.FILE_PATH_DELIMITER + Constants.TRIP_REVIEW_IMAGE_DIR + Constants.FILE_PATH_DELIMITER
-            userProfile.profileImageLoc = imageLoc + picName
+            TripReviewAlbum currentCoverPic = TripReviewAlbum.findByTripReviewAndIsCover(tripReview, true);
+            if(currentCoverPic != null){
+                currentCoverPic.isCover = false
+                currentCoverPic.save(flush:true, failOnError: true)
+            }
+            imageLoc = imageBaseDir + user.id + Constants.FILE_PATH_DELIMITER + Constants.TRIP_REVIEW_IMAGE_DIR + Constants.FILE_PATH_DELIMITER + tripReviewDir + Constants.FILE_PATH_DELIMITER + Constants.TRIP_REVIEW_COVER_PIC_DIR + Constants.FILE_PATH_DELIMITER
+            tripReviewAlbum.isCover = true
+
+
         } else if (Constants.TRIP_REVIEW_ALBUM.equalsIgnoreCase(picType)) {
-            String albumName = "";
-            imageLoc = imageBaseDir + user.id + Constants.FILE_PATH_DELIMITER  + Constants.PROFILE_COVER_IMAGE_DIR + Constants.FILE_PATH_DELIMITER
-            userProfile.coverImageLoc = imageLoc + picName
+            imageLoc = imageBaseDir + user.id + Constants.FILE_PATH_DELIMITER  + Constants.TRIP_REVIEW_IMAGE_DIR + Constants.FILE_PATH_DELIMITER + tripReviewDir + Constants.FILE_PATH_DELIMITER + Constants.TRIP_REVIEW_ALBUM_DIR + Constants.FILE_PATH_DELIMITER
+            tripReviewAlbum.isCover = false
         } else {
             return false
         }
+        tripReviewAlbum.imageLoc = imageLoc + picName
         log.info("user id : " + user.id + " pictype : " + picType + " picName : " + picName + " imageloc : " + imageLoc)
-        userProfile.save(flush: true, failOnError: true)
+        tripReviewAlbum.save(flush: true, failOnError: true)
 
-        //save image to user_profile_image table
-        UserProfileImage userProfileImage = UserProfileImage.findByUserAndImageTypeAndInUse(user, picType, true)
-        if (userProfileImage != null) {
-            userProfileImage.inUse = false
-            userProfileImage.save(failOnError: true, flush: true)
-
-        }
-        userProfileImage = new UserProfileImage()
-        userProfileImage.imageLoc = imageLoc
-        userProfileImage.inUse = true
-        userProfileImage.user = user
-        userProfileImage.imageType = picType
-        userProfileImage.save(failOnError: true, flush: true)
 
 
         saveImageFileToSystem(imageLoc, photo)

@@ -4,7 +4,6 @@ class TripReview {
 
     User user;
     String title;
-    String tripCoverPicLoc;
     String timeToVisit;
     String routeToTake;
     String tripDescription;
@@ -12,7 +11,6 @@ class TripReview {
     static constraints = {
         user(nullable: true)
         title(nullable: true)
-        tripCoverPicLoc(nullable: true)
         timeToVisit(nullable: true)
         routeToTake(nullable: true)
         tripDescription(type: 'text',nullable: true)

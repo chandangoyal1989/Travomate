@@ -23,8 +23,8 @@ public class Constants {
     public static final String PROFILE_TYPE_IMAGE = "profileImage";
     public static final String COVER_PIC_TYPE_IMAGE = "coverImage";
     public static final String ID_PROOF_TYPE_IMAGE = "idProof";
-    public static final String TRIP_REVIEW_COVER_IMAGE = "tripReviewCover";
-    public static final String TRIP_REVIEW_ALBUM = "tripReviewAlbum";
+    public static final String TRIP_REVIEW_COVER_IMAGE = "cover";
+    public static final String TRIP_REVIEW_ALBUM = "album";
     public static final String OTP_MAIL_SOURCE_KEY = "email";
     public static final String OTP_PHONE_SOURCE_KEY = "phone";
     public static final String SMS_AUTH_KEY = "136393AhWl0TxW1586fd9de";
@@ -42,6 +42,8 @@ public class Constants {
 
     public static final String LIKE_POST_STRING = "post";
     public static final String LIKE_COMMENT_STRING = "comment";
+    public static final String TRIP_REVIEW_ALBUM_DIR = "trip_review_album";
+    public static final String TRIP_REVIEW_COVER_PIC_DIR = "cover_image";
 
 
 }
