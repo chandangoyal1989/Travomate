@@ -53,7 +53,7 @@ class UserProfileController {
             return
         }
 
-        [userProfileInstance: userProfileInstance,verificationStatus:Constants.VerificationStatus]
+        [userProfileInstance: userProfileInstance]
     }
 
     def update(Long id, Long version) {
