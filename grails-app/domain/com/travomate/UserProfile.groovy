@@ -14,17 +14,20 @@ class UserProfile {
     String city
     String state
     String country
-
+    String verificationStatus
+    Boolean isActive
 
     static constraints = {
         name(nullable: true)
-        idProofLoc(nullable: true)
+        occupation(nullable: true)
         nationality(nullable: true)
         languages(nullable: true)
+        verificationStatus(nullable: true)
+        isActive(nullable: true)
+        idProofLoc(nullable: true)
         userIntro(nullable: true)
         profileImageLoc(nullable: true)
         coverImageLoc(nullable: true)
-        occupation(nullable: true)
         city(nullable: true)
         state(nullable: true)
         country(nullable: true)
