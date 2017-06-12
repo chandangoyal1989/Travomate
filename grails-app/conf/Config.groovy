@@ -111,6 +111,7 @@ grails.plugins.springsecurity.userLookup.authorityJoinClassName = 'com.travomate
 grails.plugins.springsecurity.authority.className = 'com.travomate.Role'
 grails.plugins.springsecurity.requestMap.className = 'com.travomate.UserRole'
 grails.plugins.springsecurity.securityConfigType = 'Requestmap'
+grails.plugins.springsecurity.successHandler.defaultTargetUrl = '/userProfile'
 
 
 grails {

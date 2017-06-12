@@ -2,13 +2,15 @@ package com.travomate
 
 class Role {
 
-    String authority
+    String name
 
     static mapping = {
         cache true
+        table  'role'
+        id generator:'org.hibernate.id.enhanced.SequenceStyleGenerator', params:[sequence:'ROLE_SEQ']
     }
 
     static constraints = {
-        authority blank: false, unique: true
+        name blank: false, unique: true
     }
 }

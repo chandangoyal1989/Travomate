@@ -99,8 +99,8 @@
 		<div class="nav" role="navigation">
 			<ul>
 				<li><a class="home" href="${createLink(uri: '/')}"><g:message code="default.home.label"/></a></li>
-				<li><g:link class="list" action="list"><g:message code="default.list.label" args="[entityName]" /></g:link></li>
-				<li><g:link class="create" action="create"><g:message code="default.new.label" args="[entityName]" /></g:link></li>
+				%{--<li><g:link class="list" action="list"><g:message code="default.list.label" args="[entityName]" /></g:link></li>--}%
+				%{--<li><g:link class="create" action="create"><g:message code="default.new.label" args="[entityName]" /></g:link></li>--}%
 			</ul>
 		</div>
 		<div id="show-userProfile" class="content scaffold-show" role="main">
@@ -202,73 +202,73 @@
 
 				</li>
 				</g:if>
-			
-				<g:if test="${userProfileInstance?.userIntro}">
-				<li class="fieldcontain">
-					<span id="userIntro-label" class="property-label"><g:message code="userProfile.userIntro.label" default="User Intro" /></span>
-					
-						<span class="property-value" aria-labelledby="userIntro-label"><g:fieldValue bean="${userProfileInstance}" field="userIntro"/></span>
-					
-				</li>
-				</g:if>
-			
-				<g:if test="${userProfileInstance?.profileImageLoc}">
-				<li class="fieldcontain">
-					<span id="profileImageLoc-label" class="property-label"><g:message code="userProfile.profileImageLoc.label" default="Profile Image" /></span>
-				</li>
-				</g:if>
-			
-				<g:if test="${userProfileInstance?.coverImageLoc}">
-				<li class="fieldcontain">
-					<span id="coverImageLoc-label" class="property-label"><g:message code="userProfile.coverImageLoc.label" default="Cover Image Loc" /></span>
-					
-						<span class="property-value" aria-labelledby="coverImageLoc-label"><g:fieldValue bean="${userProfileInstance}" field="coverImageLoc"/></span>
-					
-				</li>
-				</g:if>
-			
-				<g:if test="${userProfileInstance?.city}">
-				<li class="fieldcontain">
-					<span id="city-label" class="property-label"><g:message code="userProfile.city.label" default="City" /></span>
-					
-						<span class="property-value" aria-labelledby="city-label"><g:fieldValue bean="${userProfileInstance}" field="city"/></span>
-					
-				</li>
-				</g:if>
-			
-				<g:if test="${userProfileInstance?.state}">
-				<li class="fieldcontain">
-					<span id="state-label" class="property-label"><g:message code="userProfile.state.label" default="State" /></span>
-					
-						<span class="property-value" aria-labelledby="state-label"><g:fieldValue bean="${userProfileInstance}" field="state"/></span>
-					
-				</li>
-				</g:if>
-			
-				<g:if test="${userProfileInstance?.country}">
-				<li class="fieldcontain">
-					<span id="country-label" class="property-label"><g:message code="userProfile.country.label" default="Country" /></span>
-					
-						<span class="property-value" aria-labelledby="country-label"><g:fieldValue bean="${userProfileInstance}" field="country"/></span>
-					
-				</li>
-				</g:if>
-			
-				<g:if test="${userProfileInstance?.user}">
-				<li class="fieldcontain">
-					<span id="user-label" class="property-label"><g:message code="userProfile.user.label" default="User" /></span>
-					
-						<span class="property-value" aria-labelledby="user-label"><g:link controller="user" action="show" id="${userProfileInstance?.user?.id}">${userProfileInstance?.user?.encodeAsHTML()}</g:link></span>
-					
-				</li>
-				</g:if>
+
+				%{--<g:if test="${userProfileInstance?.userIntro}">--}%
+				%{--<li class="fieldcontain">--}%
+					%{--<span id="userIntro-label" class="property-label"><g:message code="userProfile.userIntro.label" default="User Intro" /></span>--}%
+					%{----}%
+						%{--<span class="property-value" aria-labelledby="userIntro-label"><g:fieldValue bean="${userProfileInstance}" field="userIntro"/></span>--}%
+					%{----}%
+				%{--</li>--}%
+				%{--</g:if>--}%
+			%{----}%
+				%{--<g:if test="${userProfileInstance?.profileImageLoc}">--}%
+				%{--<li class="fieldcontain">--}%
+					%{--<span id="profileImageLoc-label" class="property-label"><g:message code="userProfile.profileImageLoc.label" default="Profile Image" /></span>--}%
+				%{--</li>--}%
+				%{--</g:if>--}%
+			%{----}%
+				%{--<g:if test="${userProfileInstance?.coverImageLoc}">--}%
+				%{--<li class="fieldcontain">--}%
+					%{--<span id="coverImageLoc-label" class="property-label"><g:message code="userProfile.coverImageLoc.label" default="Cover Image Loc" /></span>--}%
+					%{----}%
+						%{--<span class="property-value" aria-labelledby="coverImageLoc-label"><g:fieldValue bean="${userProfileInstance}" field="coverImageLoc"/></span>--}%
+					%{----}%
+				%{--</li>--}%
+				%{--</g:if>--}%
+			%{----}%
+				%{--<g:if test="${userProfileInstance?.city}">--}%
+				%{--<li class="fieldcontain">--}%
+					%{--<span id="city-label" class="property-label"><g:message code="userProfile.city.label" default="City" /></span>--}%
+					%{----}%
+						%{--<span class="property-value" aria-labelledby="city-label"><g:fieldValue bean="${userProfileInstance}" field="city"/></span>--}%
+					%{----}%
+				%{--</li>--}%
+				%{--</g:if>--}%
+			%{----}%
+				%{--<g:if test="${userProfileInstance?.state}">--}%
+				%{--<li class="fieldcontain">--}%
+					%{--<span id="state-label" class="property-label"><g:message code="userProfile.state.label" default="State" /></span>--}%
+					%{----}%
+						%{--<span class="property-value" aria-labelledby="state-label"><g:fieldValue bean="${userProfileInstance}" field="state"/></span>--}%
+					%{----}%
+				%{--</li>--}%
+				%{--</g:if>--}%
+			%{----}%
+				%{--<g:if test="${userProfileInstance?.country}">--}%
+				%{--<li class="fieldcontain">--}%
+					%{--<span id="country-label" class="property-label"><g:message code="userProfile.country.label" default="Country" /></span>--}%
+					%{----}%
+						%{--<span class="property-value" aria-labelledby="country-label"><g:fieldValue bean="${userProfileInstance}" field="country"/></span>--}%
+					%{----}%
+				%{--</li>--}%
+				%{--</g:if>--}%
+			%{----}%
+				%{--<g:if test="${userProfileInstance?.user}">--}%
+				%{--<li class="fieldcontain">--}%
+					%{--<span id="user-label" class="property-label"><g:message code="userProfile.user.label" default="User" /></span>--}%
+					%{----}%
+						%{--<span class="property-value" aria-labelledby="user-label"><g:link controller="user" action="show" id="${userProfileInstance?.user?.id}">${userProfileInstance?.user?.encodeAsHTML()}</g:link></span>--}%
+					%{----}%
+				%{--</li>--}%
+				%{--</g:if>--}%
 			
 			</ol>
 			<g:form>
 				<fieldset class="buttons">
 					<g:hiddenField name="id" value="${userProfileInstance?.id}" />
 					<g:link class="edit" action="edit" id="${userProfileInstance?.id}"><g:message code="default.button.edit.label" default="Edit" /></g:link>
-					<g:actionSubmit class="delete" action="delete" value="${message(code: 'default.button.delete.label', default: 'Delete')}" onclick="return confirm('${message(code: 'default.button.delete.confirm.message', default: 'Are you sure?')}');" />
+					%{--<g:actionSubmit class="delete" action="delete" value="${message(code: 'default.button.delete.label', default: 'Delete')}" onclick="return confirm('${message(code: 'default.button.delete.confirm.message', default: 'Are you sure?')}');" />--}%
 				</fieldset>
 			</g:form>
 		</div>

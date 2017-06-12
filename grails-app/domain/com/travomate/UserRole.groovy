@@ -1,16 +1,12 @@
 package com.travomate
 
-class UserRole {
+class UserRole implements Serializable{
 
-    String url
-    String configAttribute
-
+    User user
+    Role role
     static mapping = {
-        cache true
-    }
-
-    static constraints = {
-        url blank: false, unique: true
-        configAttribute blank: false
+        id composite: ['role', 'user']
+        table  'user_role'
+        version false
     }
 }

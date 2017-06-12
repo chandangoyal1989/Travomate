@@ -7,7 +7,9 @@ class UrlMappings {
 			}
 		}
 
-		"/"(view:"/index")
+		"/" (controller:"login", action:"auth")
+
+//		"/"(view:"/index")
 		"500"(view:'/error')
 
 		"/api/login" (controller: "restAPI") {
