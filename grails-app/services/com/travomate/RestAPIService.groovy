@@ -41,8 +41,8 @@ class RestAPIService {
     }
 
 
-    List<UserProfile> getUserProfileByNameLike(String name) {
-        return UserProfile.findAllByNameIlike(name)
+    List<UserProfile> getUserProfileByNameLike(String name, User user) {
+        return UserProfile.findAllByNameIlikeAndUserNotEqual("%${name}%", user)
 //        return UserProfile.findAllByNameLike(name)
     }
 

@@ -1,6 +1,7 @@
 package com.travomate.tool
 
 import com.travomate.UserFriendRequest
+import com.travomate.UserProfile
 import com.travomate.dto.UserFriendRequestDTO
 
 /**
@@ -8,6 +9,7 @@ import com.travomate.dto.UserFriendRequestDTO
  */
 @Singleton(lazy = true)
 class UserFriendRequestDTOMapper {
+    UserProfileDTOMapper userProfileDTOMapper = UserProfileDTOMapper.getInstance()
     public UserFriendRequestDTO[] mapUserFriendRequestListToUserFriendRequestDTOArray(List<UserFriendRequest> userFriendRequestList){
         if(userFriendRequestList == null || userFriendRequestList?.isEmpty()){
             return null
@@ -28,8 +30,8 @@ class UserFriendRequestDTOMapper {
         }
 
         UserFriendRequestDTO userFriendRequestDTO = new UserFriendRequestDTO()
-        userFriendRequestDTO.recipient = userFriendRequest.recipient
-        userFriendRequestDTO.sender = userFriendRequest.sender
+        userFriendRequestDTO.recipient = userProfileDTOMapper.mapUserProfileToUserProfileDTO(UserProfile.findByUser(userFriendRequest.recipient))
+        userFriendRequestDTO.sender = userProfileDTOMapper.mapUserProfileToUserProfileDTO(UserProfile.findByUser(userFriendRequest.sender))
         userFriendRequestDTO.requestSent = userFriendRequest.requestSent
 
         return userFriendRequestDTO

@@ -489,7 +489,9 @@ class RestAPIController extends Rest{
 
     def searchUser(){
         String userName = params.name
-        List<UserProfile> userProfile = restAPIService.getUserProfileByNameLike(userName)
+        Long userId = params.userId ? Long.parseLong(params.userId) : null
+        User user = User.get(userId)
+        List<UserProfile> userProfile = restAPIService.getUserProfileByNameLike(userName, user)
         UserProfileDTO[] userProfileDTOs = userProfileDTOMapper.mapUserProfileListToUserProfileDTOArray(userProfile)
         Expando userProfileResponse = new Expando()
         userProfileResponse.userProfile = userProfileDTOs
