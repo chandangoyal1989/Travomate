@@ -277,6 +277,7 @@ class RestAPIService {
             userProfile.country = postParams.country ?: null
             userProfile.user.dateOfBirth = postParams.dob ?: null
             userProfile.user.gender = postParams.gender ?: null
+            userProfile.verificationStatus = Constants.VerificationStatus.Pending.toString();
             userProfile.save(flush: true, failOnError: true)
         }
     }

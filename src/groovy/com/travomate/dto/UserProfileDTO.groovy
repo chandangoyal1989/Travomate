@@ -17,4 +17,5 @@ class UserProfileDTO {
     String city
     String state
     String country
+    String verificationStatus
 }

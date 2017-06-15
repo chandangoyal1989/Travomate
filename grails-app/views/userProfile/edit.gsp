@@ -124,7 +124,7 @@
 							<g:message code="userProfile.name.label" default="Name" />
 
 						</label>
-						<g:textField name="name" value="${userProfileInstance?.name}"/>
+						<g:textField name="name" value="${userProfileInstance?.name}" disabled="disabled"/>
 					</div>
 
 					<div class="fieldcontain ${hasErrors(bean: userProfileInstance, field: 'nationality', 'error')} ">
@@ -132,7 +132,7 @@
 							<g:message code="userProfile.nationality.label" default="Nationality" />
 
 						</label>
-						<g:textField name="nationality" value="${userProfileInstance?.nationality}"/>
+						<g:textField name="nationality" value="${userProfileInstance?.nationality}" disabled="disabled"/>
 					</div>
 
 

@@ -105,6 +105,14 @@ log4j = {
     }
 }
 
+/*
+grails.plugins.springsecurity.interceptUrlMap = [
+        '/userProfile/**':      ['IS_AUTHENTICATED_FULLY'],
+        '/logout/**':
+             ['IS_AUTHENTICATED_FULLY']
+]
+*/
+
 // Added by the Spring Security Core plugin:
 grails.plugins.springsecurity.userLookup.userDomainClassName = 'com.travomate.User'
 grails.plugins.springsecurity.userLookup.authorityJoinClassName = 'com.travomate.UserRole'

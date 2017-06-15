@@ -38,6 +38,7 @@ class UserProfileDTOMapper {
         UserProfileDTO userProfileDTO = new UserProfileDTO()
         userProfileDTO.profileId = userProfile.id
         userProfileDTO.name = userProfile.name
+        userProfileDTO.verificationStatus = userProfile.verificationStatus
         userProfileDTO.user = userDTO
         userProfileDTO.occupation = userProfile.occupation
         userProfileDTO.nationality = userProfile.nationality
