@@ -18,17 +18,19 @@
 		<r:layoutResources />
 	</head>
 	<body>
-		<div id="grailsLogo" role="banner">Travomate</div>
-	<div style="float:right">
-		<sec:ifLoggedIn>
-			<g:link controller="logout">Logout</g:link>
-		</sec:ifLoggedIn>
-	</div>
-	<br/><br/>
-	<div>
+		<div id="grailsLogo" role="banner">
+            <img id="leftDiv" style=" display:inline; margin-right: -20px" src="${resource(dir: 'images', file: 'travomate.png')}" alt="Travomate"/>
+            <div id="rightDiv" style=" display:inline;">
+                <img id="coverImg"  src="${resource(dir: 'images', file: 'cover.png')}" alt="cover"/>
+            </div>
+            <div style="float:right">
+                <sec:ifLoggedIn>
+                    <g:link controller="logout"><b style="color: #2e3741">Logout</b></g:link>
+                </sec:ifLoggedIn>
+            </div>
+        </div>
 		<g:layoutBody/>
 		<div class="footer" role="contentinfo"></div>
-		<div id="spinner" class="spinner" style="display:none;"><g:message code="spinner.alt" default="Loading&hellip;"/></div>
 		<g:javascript library="application"/>
 		<r:layoutResources />
 	</body>
