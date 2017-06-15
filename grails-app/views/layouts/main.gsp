@@ -18,7 +18,7 @@
 		<r:layoutResources />
 	</head>
 	<body>
-		<div id="grailsLogo" role="banner"><img src="${resource(dir: 'images', file: 'grails_logo.png')}" alt="Travomate"/></a></div>
+		<div id="grailsLogo" role="banner">Travomate</div>
 	<div style="float:right">
 		<sec:ifLoggedIn>
 			<g:link controller="logout">Logout</g:link>
