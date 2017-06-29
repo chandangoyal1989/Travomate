@@ -45,5 +45,8 @@ public class Constants {
     public static final String LIKE_POST_STRING = "post";
     public static final String LIKE_COMMENT_STRING = "comment";
 
+    public static final String RECIPIENT_FRIEND_REQUEST_API_PATH_STR = "recipient";
+    public static final String SENDER_FRIEND_REQUEST_API_PATH_STR = "sender";
+
 
 }

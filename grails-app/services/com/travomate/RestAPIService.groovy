@@ -283,6 +283,35 @@ class RestAPIService {
     }
 
 
+    public Boolean checkIfFriendRequestAlreadySent(Long fromUserId, Long toUserId) {
+        Boolean isFriendRequestSent = false;
+        User sender = User.get(fromUserId)
+        User recipient = User.get(toUserId)
+        UserFriendRequest userFriendRequest1 = UserFriendRequest.findByRecipientAndSender(sender, recipient);
+        UserFriendRequest userFriendRequest = UserFriendRequest.findByRecipientAndSender(recipient, sender)
+        if(userFriendRequest != null || userFriendRequest1 != null){
+            isFriendRequestSent = true
+        }
+
+        return isFriendRequestSent;
+    }
+
+
+    public Boolean checkIfSenderIsAlreadyAFriend(Long fromUserId, Long toUserId){
+        Boolean isFriend = false
+        User sender = User.get(fromUserId)
+        User recipient = User.get(toUserId)
+        UserFriends friendship1 = UserFriends.findByFriendAndProfileUser(sender, recipient)
+        UserFriends friendship2 = UserFriends.findByFriendAndProfileUser(recipient, sender)
+        log.info("friendship1 " + friendship1 + " friendship2 " + friendship2)
+        if(friendship1 != null && friendship2 != null){
+            isFriend = true
+        }
+
+        return isFriend
+    }
+
+
     public Boolean saveFriendRequest(Long fromUserId, Long toUserId) {
         Boolean isSaved = true
         User recipient = User.get(toUserId)
@@ -293,11 +322,7 @@ class RestAPIService {
             friendRequest.recipient = recipient
             friendRequest.sender = sender
             friendRequest.requestSent = new Date()
-            if (friendRequest.validate()) {
-                friendRequest.save(flush: true, failOnError: true)
-            } else {
-                isSaved = false
-            }
+            friendRequest.save(flush: true, failOnError: true)
         } else {
             isSaved = false
         }
@@ -318,17 +343,21 @@ class RestAPIService {
     }
 
 
-    public List<UserFriendRequest> getFriendRequests(Long profileUserId) {
+    public List<UserFriendRequest> getFriendRequests(Long profileUserId, String requestType) {
         log.info("user profile : " + User.get(profileUserId))
-        return UserFriendRequest.findAllByRecipient(User.get(profileUserId))
+        if(Constants.RECIPIENT_FRIEND_REQUEST_API_PATH_STR.equalsIgnoreCase(requestType)) {
+            return UserFriendRequest.findAllByRecipient(User.get(profileUserId))
+        } else {
+            return UserFriendRequest.findAllBySender(User.get(profileUserId))
+        }
 
     }
 
 
     public Boolean saveFriendship(Long fromUserId, Long toUserId) {
         Boolean isSaved = true
-        UserProfile recipient = UserProfile.findByUser(getUser(toUserId))
-        UserProfile sender = UserProfile.findByUser(getUser(fromUserId))
+        User recipient = getUser(toUserId)
+        User sender = getUser(fromUserId)
         System.out.println("recipient " + recipient + " sender " + sender)
         if (recipient != null && sender != null) {
             UserFriends friendship1 = new UserFriends()

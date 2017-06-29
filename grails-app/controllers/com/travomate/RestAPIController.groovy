@@ -263,11 +263,24 @@ class RestAPIController extends Rest{
         Long toUserId = postParams.toUserId != null ? Long.parseLong(postParams.toUserId + "") : null
         log.info("from user id : "+fromUserId+" to user id : "+toUserId)
         if(fromUserId != null && toUserId != null){
-            Boolean isSaved = restAPIService.saveFriendRequest(fromUserId, toUserId)
-            if(isSaved){
-                success("Friend request sent")
+            Boolean isFriendRequestSent = restAPIService.checkIfFriendRequestAlreadySent(fromUserId, toUserId)
+            log.info("isFriendRequestSent " + isFriendRequestSent)
+            if(!isFriendRequestSent) {
+                Boolean isFriend = restAPIService.checkIfSenderIsAlreadyAFriend(fromUserId, toUserId)
+                log.info("isFriend " + isFriend)
+                if(isFriend){
+                    success("User is already a friend")
+                } else {
+                    Boolean isSaved = restAPIService.saveFriendRequest(fromUserId, toUserId)
+                    if (isSaved) {
+                        success("Friend request sent")
+                    } else {
+                        error("Friend request could not be sent")
+                    }
+                }
             } else {
-                error("Friend request could not be sent")
+
+                success("Friend request already sent")
             }
         } else {
             error("Incorrect user information")
@@ -296,7 +309,8 @@ class RestAPIController extends Rest{
     def showFriendRequests(){
         Long profileUserId = params.profileUserId != null ? Long.parseLong(params.profileUserId) : null
         if(profileUserId != null){
-            List<UserFriendRequest> friendRequestList = restAPIService.getFriendRequests(profileUserId)
+            String requestType = params.requestType?:Constants.RECIPIENT_FRIEND_REQUEST_API_PATH_STR;
+            List<UserFriendRequest> friendRequestList = restAPIService.getFriendRequests(profileUserId, requestType)
             UserFriendRequestDTO[] userFriendRequestDTOs =  userFriendRequestDTOMapper.mapUserFriendRequestListToUserFriendRequestDTOArray(friendRequestList)
             Expando friendRequestResponse = new Expando()
             friendRequestResponse.friendRequest = userFriendRequestDTOs

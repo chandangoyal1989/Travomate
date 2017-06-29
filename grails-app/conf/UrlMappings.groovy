@@ -57,7 +57,7 @@ class UrlMappings {
 			action = [DELETE : "deleteFriendRequest"]
 		}
 
-		"/api/showFriendRequests/${profileUserId}" (controller: "restAPI") {
+		"/api/showFriendRequests/${profileUserId}/${requestType}" (controller: "restAPI") {
 			action = [GET : "showFriendRequests"]
 		}
 

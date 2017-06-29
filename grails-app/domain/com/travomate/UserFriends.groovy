@@ -2,8 +2,8 @@ package com.travomate
 
 class UserFriends {
 
-    UserProfile profileUser
-    UserProfile friend
+    User profileUser
+    User friend
     Date friendshipDate
 
 
