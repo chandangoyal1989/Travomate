@@ -355,7 +355,7 @@ class RestAPIController extends Rest{
         if(profileUserId != null){
             User user = restAPIService.getUser(profileUserId)
             UserProfile profileUser = restAPIService.getProfile(user)
-            List<UserFriends> userFriends = restAPIService.getUserFriends(profileUser)
+            List<UserFriends> userFriends = restAPIService.getUserFriends(user)
             Expando userFriendsExpando = restAPIService.constructUserFriendList(userFriends)
             userFriendsExpando.profileUser = profileUserId
             JSON results = userFriendsExpando.properties as JSON

@@ -52,8 +52,8 @@ class RestAPIService {
         return profile
     }
 
-    public List<UserFriends> getUserFriends(UserProfile userProfile) {
-        return UserFriends.findAllByProfileUser(userProfile)
+    public List<UserFriends> getUserFriends(User user) {
+        return UserFriends.findAllByProfileUser(user)
     }
 
     public List<UserProfileImage> getListOfImagesForUser(User user, String imageType) {
@@ -338,7 +338,9 @@ class RestAPIService {
 
         if (recipient != null && sender != null) {
             UserFriendRequest friendRequest = UserFriendRequest.findByRecipientAndSender(recipient, sender)
-            friendRequest.delete()
+            if(friendRequest != null) {
+                friendRequest.delete()
+            }
         }
     }
 
@@ -389,8 +391,9 @@ class RestAPIService {
 
     public Boolean deleteFriend(Long profileUserId, Long toBeDeletedUserId) {
         Boolean isDeleted = true
-        UserProfile profileUser = UserProfile.findByUser(User.get(profileUserId))
-        UserProfile toBeDeletedUser = UserProfile.findByUser(User.get(toBeDeletedUserId))
+        User profileUser = User.get(profileUserId)
+        User toBeDeletedUser = User.get(toBeDeletedUserId)
+
 
         if (profileUser != null && toBeDeletedUser != null) {
             UserFriends friendship1 = UserFriends.findByProfileUserAndFriend(profileUser, toBeDeletedUser)
@@ -410,8 +413,8 @@ class RestAPIService {
         Expando userFriendsExpando = new Expando()
         List<UserProfileDTO> friendList = new ArrayList<UserProfileDTO>()
         userFriends?.each {
-            UserProfile friendProfile = it.friend
-            UserProfileDTO friendProfileDTO = userProfileDTOMapper.mapUserProfileToUserProfileDTO(friendProfile)
+            User friendProfile = it.friend
+            UserProfileDTO friendProfileDTO = userProfileDTOMapper.mapUserProfileToUserProfileDTO(UserProfile.findByUser(friendProfile))
             friendList.add(friendProfileDTO)
         }
         userFriendsExpando.friends = friendList
@@ -423,7 +426,7 @@ class RestAPIService {
     public void deleteProfile(User user) {
         UserProfile userProfile = UserProfile.findByUser(user)
         System.out.println("delete profile user id  : " + user.id)
-        UserFriends userFriends = UserFriends.findByProfileUser(userProfile)
+        UserFriends userFriends = UserFriends.findByProfileUser(user)
         userFriends.delete()
         userProfile.delete()
     }
