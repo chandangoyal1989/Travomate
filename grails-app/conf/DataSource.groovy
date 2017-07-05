@@ -18,7 +18,7 @@ environments {
     development {
         dataSource {
             dbCreate = "update" // one of 'create', 'create-drop', 'update', 'validate', ''
-            url = "jdbc:mysql://122.160.30.50/travomate?useUnicode=yes&characterEncoding=UTF-8"
+            url = "jdbc:mysql://localhost/travomate?useUnicode=yes&characterEncoding=UTF-8"
         }
     }
     test {
@@ -54,7 +54,7 @@ grails {
 //        port = 27017
 //        databaseName = "travomate"
 
-        host = "122.160.30.50"
+        host = "localhost"
         port = 27017
         databaseName = "travomate"
         username = "manisha"

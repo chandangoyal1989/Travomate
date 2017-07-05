@@ -362,24 +362,27 @@ class RestAPIService {
         User sender = getUser(fromUserId)
         System.out.println("recipient " + recipient + " sender " + sender)
         if (recipient != null && sender != null) {
-            UserFriends friendship1 = new UserFriends()
-            friendship1.profileUser = recipient
-            friendship1.friend = sender
-            friendship1.friendshipDate = new Date()
+            List<UserFriends> existingFriendList = UserFriends.findAllByProfileUserInListAndFriendInList([recipient, sender],[recipient, sender])
+            if(existingFriendList == null) {
+                UserFriends friendship1 = new UserFriends()
+                friendship1.profileUser = recipient
+                friendship1.friend = sender
+                friendship1.friendshipDate = new Date()
 
-            UserFriends friendship2 = new UserFriends()
-            friendship2.profileUser = sender
-            friendship2.friend = recipient
-            friendship2.friendshipDate = new Date()
-            boolean valid = friendship1.validate()
-            System.out.println("valid1 : " + valid)
-            valid = friendship2.validate()
-            System.out.println("valid2 : " + valid)
-            friendship1.save(flush: true, failOnError: true)
-            friendship2.save(flush: true, failOnError: true)
+                UserFriends friendship2 = new UserFriends()
+                friendship2.profileUser = sender
+                friendship2.friend = recipient
+                friendship2.friendshipDate = new Date()
+                boolean valid = friendship1.validate()
+                System.out.println("valid1 : " + valid)
+                valid = friendship2.validate()
+                System.out.println("valid2 : " + valid)
+                friendship1.save(flush: true, failOnError: true)
+                friendship2.save(flush: true, failOnError: true)
 
-            //delete friend request
-            deleteFriendRequest(fromUserId, toUserId)
+                //delete friend request
+                deleteFriendRequest(fromUserId, toUserId)
+            }
 
         } else {
             isSaved = false
