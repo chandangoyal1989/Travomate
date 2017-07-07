@@ -30,7 +30,7 @@ environments {
     production {
         dataSource {
             dbCreate = "update" // one of 'create', 'create-drop', 'update', 'validate', ''
-            url = "jdbc:mysql://122.160.30.50/travomate?useUnicode=yes&characterEncoding=UTF-8"
+            url = "jdbc:mysql://localhost/travomate?useUnicode=yes&characterEncoding=UTF-8"
             pooled = true
             properties {
                maxActive = -1
