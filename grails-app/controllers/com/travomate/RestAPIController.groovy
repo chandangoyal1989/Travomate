@@ -21,6 +21,7 @@ class RestAPIController extends Rest{
     CommentDTOMapper commentDTOMapper = CommentDTOMapper.getInstance()
     LikeDTOMapper likeDTOMapper = LikeDTOMapper.getInstance()
     UserProfileImageDTOMapper userProfileImageDTOMapper = UserProfileImageDTOMapper.getInstance()
+    TripReviewDTOMapper tripReviewDTOMapper = TripReviewDTOMapper.getInstance()
 
     def index() {}
 
@@ -298,7 +299,7 @@ class RestAPIController extends Rest{
             if(isSaved){
                 success("Friend request Accepted")
             } else {
-                error("Incorrect information to accept the friend request")
+                error("Friend Request cannot be accepted")
             }
         } else {
             error("Incorrect user information")
@@ -375,8 +376,9 @@ class RestAPIController extends Rest{
     def postTravellerFeed() {
         log.info(" in post feed")
         def postParams = JSON.parse(request.JSON.toString())
-        ObjectId postId = mongoService.createOrModifyTravellerPost(postParams, null)
-        mongoService.sendNotification(postId.toString(), postParams, Constants.PostType.TRAVELLER)
+        ObjectId postId = mongoService.saveTravellerPost(postParams)
+//        ObjectId postId = mongoService.createOrModifyTravellerPost(postParams, null)
+//        mongoService.sendNotification(postId.toString(), postParams, Constants.PostType.TRAVELLER)
         Expando resultExpando = new Expando()
         resultExpando.postId = postId.toString()
         JSON results = resultExpando.properties as JSON
@@ -420,8 +422,9 @@ class RestAPIController extends Rest{
     def postGuideFeed(){
         log.info(" in postGuideFeed")
         def postParams = JSON.parse(request.JSON.toString())
-        def guidePostId = mongoService.createOrModifyGuidePost(postParams, null)
-        mongoService.sendNotification(guidePostId.toString(), postParams, Constants.PostType.GUIDE)
+        def guidePostId = mongoService.saveGuidePost(postParams)
+//        def guidePostId = mongoService.createOrModifyGuidePost(postParams, null)
+//        mongoService.sendNotification(guidePostId.toString(), postParams, Constants.PostType.GUIDE)
         Expando resultExpando = new Expando()
         resultExpando.postId = guidePostId.toString()
         JSON results = resultExpando.properties as JSON
@@ -517,9 +520,40 @@ class RestAPIController extends Rest{
 
     def addComment(){
         def postParams = JSON.parse(request.JSON.toString())
+        log.info("addComment postParams : " + postParams)
         String postId = params.postId
-        mongoService.saveComment(postId, postParams)
-        success("Comments added to Post")
+        Comment savedComment = mongoService.saveComment(null, postId, postParams)
+        Expando commentResponse = new Expando()
+        commentResponse.id = savedComment.id.toString()
+        JSON results = commentResponse.properties as JSON
+        success(results, "Comments added to Post")
+    }
+
+
+    def editComment(){
+        def postParams = JSON.parse(request.JSON.toString())
+        log.info("editComment postParams : " + postParams)
+        String commentId = params.commentId
+        Comment savedComment = mongoService.saveComment(commentId, null, postParams)
+        if(savedComment != null){
+            Expando commentResponse = new Expando()
+            commentResponse.id = savedComment.id.toString()
+            JSON results = commentResponse.properties as JSON
+            success(results, "Comment modified successfully")
+        } else {
+            notFound("Invalid comment Id")
+        }
+    }
+
+
+    def deleteComment(){
+        String commentId = params.commentId
+        if(commentId != null){
+            mongoService.deleteComment(commentId)
+            success("Comment deleted successfully")
+        } else {
+            error("CommentId cannot be null")
+        }
     }
 
 
@@ -533,8 +567,9 @@ class RestAPIController extends Rest{
             commentExpando.id = comment.id.toString()
             commentExpando.commentText = comment.commentText
             commentExpando.postDate = comment.postDate
-            commentExpando.postedBy = UserProfile.findByUser(User.get(comment.postedBy))
-            List<Comment> replies = Comment.findAllByPostIdAndParentCommentId(comment.id.toString())
+            commentExpando.postedBy = userProfileDTOMapper.mapUserProfileToUserProfileDTO(UserProfile.findByUser(User.get(comment.postedById)))
+            log.info("postID : " + postId + " comment id : " + comment.id.toString())
+            List<Comment> replies = Comment.findAllByPostIdAndParentCommentId(postId, comment.id.toString())
             commentExpando.replies = commentDTOMapper.mapCommentListToCommentDTOArray(replies)
 
             //Add comment likes
@@ -554,19 +589,35 @@ class RestAPIController extends Rest{
     def addPostLike(){
         def postParams = JSON.parse(request.JSON.toString())
         String likedObjectId = params.objectId
-        mongoService.addUserLike(likedObjectId, postParams)
-        success("Like added")
-
+        Like savedLike = mongoService.saveLike(likedObjectId, postParams)
+        Expando likeResponse = new Expando()
+        likeResponse.id = savedLike.id.toString()
+        JSON results = likeResponse.properties as JSON
+        success(results, "Like added to ${postParams.likedObjectType}")
     }
 
 
-    def getPostLikes(){
-        String likedPostId = params.objectId
-        List<Like> postLikes = mongoService.getUserLikesForPost(likedPostId)
+
+
+    def deleteLike(){
+        String likeId = params.likeId
+        if(likeId != null){
+            mongoService.deleteLike(likeId)
+            success("Like deleted successfully")
+        } else {
+            error("LikeId cannot be null")
+        }
+    }
+
+
+    def getLikesForAnObject(){
+        String likedObjectId = params.objectId
+        String likedObjectType = params.objectType
+        List<Like> postLikes = mongoService.getUserLikes(likedObjectId, likedObjectType)
         LikeDTO[] likeDTOs = likeDTOMapper.mapLikeListToLikeDTOArray(postLikes)
         Expando postLikeExpando = new Expando()
-        postLikeExpando.postLikes = likeDTOs
-        postLikeExpando.postId = likedPostId
+        postLikeExpando.likes = likeDTOs
+        postLikeExpando.likedObjectId = likedObjectId
         JSON results = postLikeExpando.properties as JSON
         success(results)
     }
@@ -587,6 +638,7 @@ class RestAPIController extends Rest{
     }
 
     def getTripReview(){
+        log.info("get trip review")
         Long userId = params.userid != null ? Long.parseLong(params.userid) : null
         Expando tripReviewExpando = new Expando()
         tripReviewExpando.userTripReviews = restAPIService.getTripReviews(userId)
@@ -600,10 +652,50 @@ class RestAPIController extends Rest{
         Long userId = params.userid ? Long.parseLong(params.userid) : null
         User user = User.get(userId)
         if(user != null){
-            restAPIService.saveTripReview(postParams, userId)
-            success("Trip Review saved successfully")
+            Long tripReviewId = params.tripReviewId != null ? Long.parseLong(params.tripReviewId + "") : 0
+            TripReview tripReview = restAPIService.saveTripReview(postParams, userId, tripReviewId)
+            if(tripReview == null){
+                error("Trip Review with name ${params.title} already exists")
+            } else {
+                Expando tripReviewResponse = new Expando()
+                tripReviewResponse.id = tripReview.id
+                JSON results = tripReviewResponse.properties as JSON
+                success(results, "Trip Review saved successfully")
+            }
         } else {
             notFound("Invalid userid")
+        }
+    }
+
+
+    def editTripReview(){
+        Long tripReviewId = params.tripReviewId != null ? Long.parseLong(params.tripReviewId) : null
+        TripReview tripReview = TripReview.get(tripReviewId)
+        if(tripReview != null) {
+            def postParams = JSON.parse(request.JSON.toString())
+            TripReview editedTripReview = restAPIService.saveTripReview(postParams, tripReview.userId, tripReviewId)
+            if(editedTripReview == null){
+                error("Trip Review with name ${postParams.title} already exists")
+            } else {
+                Expando tripReviewResponse = new Expando()
+                tripReviewResponse.id = tripReview.id
+                JSON results = tripReviewResponse.properties as JSON
+                success(results, "Trip Review modified successfully")
+            }
+        } else {
+            notFound("Invalid Trip Review Id")
+        }
+    }
+
+
+    def deleteTripReview(){
+        Long tripReviewId = params.tripReviewId != null ? Long.parseLong(params.tripReviewId) : null
+        TripReview tripReview = TripReview.get(tripReviewId)
+        if(tripReview != null) {
+            restAPIService.deleteTripReview(tripReviewId)
+            success("Trip Review with Id ${tripReviewId} deleted successfully")
+        } else {
+            notFound("Invalid Trip Review Id")
         }
     }
 
@@ -619,19 +711,33 @@ class RestAPIController extends Rest{
             def postParams = JSON.parse(request.JSON.toString())
             Long tripReviewId = params.tripReviewId != null ? Long.parseLong(params.tripReviewId + "") : null
             log.info("tripReviewId "+tripReviewId)
-            TripReview tripReview = restAPIService.saveTripReview(params, userId)
-            Boolean imageSaved = restAPIService.saveTripReviewImage(user, picType, imageFile, tripReview)
-            Expando tripReviewResponse = new Expando()
-            tripReviewResponse.id = tripReview.id
-            JSON results = tripReviewResponse.properties as JSON
-            if(imageSaved) {
+
+            TripReviewAlbum tripReviewAlbum = restAPIService.saveTripReviewImage(user, picType, imageFile, tripReviewId, params.title)
+            TripReview tripReview = tripReviewAlbum.tripReview
+            TripReviewDTO tripReviewDTO =  tripReviewDTOMapper.mapTripReviewToTripReviewDTO(tripReview)
+
+            if (tripReviewAlbum) {
+                Expando tripReviewResponse = new Expando()
+                tripReviewResponse.imageId = tripReviewAlbum.id
+                tripReviewResponse.tripReview = tripReviewDTO
+                JSON results = tripReviewResponse.properties as JSON
                 success(results, "Trip Review Image uploaded successfully")
             } else {
-                error("Invalid pic type")
+                error("Trip Review with name ${params.title} already exists")
             }
 
         } else {
             notFound("User does not exist")
+        }
+    }
+
+    def deleteTripReviewImage(){
+        Long imageId = params.imageId != null ? Long.parseLong(params.imageId) : null
+        if(imageId != null){
+            restAPIService.deleteTripReviewImage(imageId)
+            success("Image with id ${imageId} deleted successfully")
+        } else {
+            notFound("Invalid Image Id")
         }
     }
 

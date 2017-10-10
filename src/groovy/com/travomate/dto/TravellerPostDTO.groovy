@@ -1,18 +1,17 @@
 package com.travomate.dto
-
-import org.bson.types.ObjectId
-
 /**
  * Created by mchopra on 3/31/2017.
  */
 class TravellerPostDTO {
 
     String id
-    Long userId
+    UserProfileDTO user
     String source
     String destination
     String startDate
     String endDate
+    String startTime
+    String endTime
     String postDescription
 
 }

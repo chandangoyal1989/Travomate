@@ -9,8 +9,10 @@ class GuidePost {
     ObjectId id
     Long userId
     String place
-    String serviceTime
-    String serviceDate
+    String serviceStartTime
+    String serviceEndTime
+    String serviceFromDate
+    String serviceToDate
     String serviceDescription
     String postDescription
     String postTime

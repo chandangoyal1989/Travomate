@@ -17,6 +17,8 @@ import org.bson.types.ObjectId
 
 class MongoService {
 
+    static transactional = 'mongo'
+
 //    Datastore datastore = null
     private static  Mongo _mongo;
 
@@ -50,10 +52,12 @@ class MongoService {
            tp.destination = postParams.destination
            tp.startDate = postParams.startDate
            tp.endDate = postParams.endDate
+           tp.startTime = postParams.startTime
+           tp.endTime = postParams.endTime
            tp.postDescription = postParams.postDescription
            tp.userId = Long.parseLong(postParams.userId + "")
            tp.postTime = System.currentTimeMillis()
-           tp = tp.save(flush: true, failOnError: true)
+           tp = tp.save(failOnError: true)
 
        } else {
            //delete existing notifications and add new notifications
@@ -65,9 +69,11 @@ class MongoService {
            tp.destination = postParams.destination != null ? postParams.destination : tp.destination
            tp.startDate = postParams.startDate != null ? postParams.startDate : tp.startDate
            tp.endDate = postParams.endDate != null ? postParams.endDate : tp.endDate
+           tp.startTime = postParams.startTime != null ? postParams.startTime : tp.startTime
+           tp.endTime = postParams.endTime != null ? postParams.endTime : tp.endTime
            tp.postDescription = postParams.postDescription != null ? postParams.postDescription : tp.postDescription
            tp.postTime = System.currentTimeMillis()
-           tp = tp.save(flush: true, failOnError: true)
+           tp = tp.save(failOnError: true)
        }
         log.info("Saved Traveller Post : "+tp.id)
        return tp.id
@@ -105,8 +111,10 @@ class MongoService {
         if(gp == null){
             gp = new GuidePost()
             gp.place = postParams.place
-            gp.serviceTime = postParams.serviceTime
-            gp.serviceDate = postParams.serviceDate
+            gp.serviceStartTime = postParams.serviceStartTime
+            gp.serviceEndTime = postParams.serviceEndTime
+            gp.serviceFromDate = postParams.serviceFromDate
+            gp.serviceToDate = postParams.serviceToDate
             gp.serviceDescription = postParams.serviceDescription
             gp.postDescription = postParams.postDescription
             gp.postTime = System.currentTimeMillis()
@@ -118,13 +126,15 @@ class MongoService {
                 sendNotification(postId.toString(), postParams, Constants.PostType.GUIDE)
             }
             gp.place = postParams.place ?: gp.place
-            gp.serviceTime = postParams.serviceTime ?: gp.serviceTime
-            gp.serviceDate = postParams.serviceDate ?: gp.serviceDate
+            gp.serviceStartTime = postParams.serviceStartTime ?: gp.serviceStartTime
+            gp.serviceEndTime = postParams.serviceEndTime ?: gp.serviceEndTime
+            gp.serviceFromDate = postParams.serviceFromDate ?: gp.serviceFromDate
+            gp.serviceToDate = postParams.serviceToDate ?: gp.serviceToDate
             gp.serviceDescription = postParams.serviceDescription ?: gp.serviceDescription
             gp.postDescription = postParams.postDescription ?: gp.postDescription
             gp.postTime = System.currentTimeMillis()
         }
-        gp = gp.save(flush: true, failOnError: true)
+        gp = gp.save(failOnError: true)
         return gp.id
     }
 
@@ -250,20 +260,22 @@ class MongoService {
             notification.postDate = System.currentTimeMillis()
             notification.notificationType = notificationType.toString()
             notification.postType = postType.toString()
-            notification.save(flush: true, failOnError: true)
+            notification.save(failOnError: true)
         }
     }
 
 
 
     void sendNotification(String postId, def postParams, Constants.PostType postType){
+        log.info("sendNotification")
         List<Long> notifiedUsersId = new ArrayList<Long>()
         Long userId = Long.parseLong(postParams.userId + "")
         Double[] location = [Double.parseDouble(postParams.longitude + ""), Double.parseDouble(postParams.latitude + "")]
         List<Long> nearUsers = nearSphereWIthMaxDistance(location)
         UserProfile userProfile = UserProfile.findByUser(User.get(userId))
-        List<UserFriends> userFriendsList = UserFriends.findAllByProfileUser(userProfile)
-        List<Long> friendUserIdList = userFriendsList?.profileUser?.user?.id
+        log.info("sendNotification userProfile " + userProfile + " user : " + User.get(userId))
+        List<UserFriends> userFriendsList = UserFriends.findAllByProfileUser(User.get(userId))
+        List<Long> friendUserIdList = userFriendsList?.profileUser?.id
         List<TravellerPost> sameDestinationPost = TravellerPost.findAllByDestinationAndUserIdNotEqual(postParams.destination, userId)
         List<Long> sameDestinationUserList = sameDestinationPost.userId
         List<UserProfile> residentUsers = UserProfile.findAllByCityOrState(postParams.destination, postParams.destination)
@@ -319,15 +331,45 @@ class MongoService {
     }
 
 
-    void saveComment(String postId, def postParams){
-        Comment comment = new Comment()
-        comment.postId = postId
-        comment.commentText = postParams.commentText
-        comment.postDate = System.currentTimeMillis()
-        comment.postedBy = Long.parseLong(postParams.userId + "")
-        comment.parentCommentId = Long.parseLong(postParams.parentCommentId + "")
-        comment.save(flush:true, failOnError: true)
+    Comment saveComment(String commentId, String postId, def postParams){
+        log.info("comment text : " + postParams.commentText)
+        log.info("postedBy : " + postParams.userId)
+        Comment comment = null
+        if(commentId != null) {
+            comment = Comment.findById(new ObjectId(commentId))
+        } else {
+            comment = new Comment()
+            comment.postId = postId
+            comment.postDate = System.currentTimeMillis()
+        }
+        if(comment != null) {
+            comment.commentText = postParams.commentText
+            comment.postedById = postParams.postedById != null ? Long.parseLong(postParams.postedById + "") : null;
+            comment.parentCommentId = postParams.parentCommentId
+            return comment.save(failOnError: true)
+        } else {
+            return null
+        }
     }
+
+
+    void deleteComment(String commentId){
+        Comment comment = Comment.findById(new ObjectId(commentId))
+        if(comment != null){
+            comment.delete()
+        }
+
+    }
+
+
+    void deleteLike(String likeId){
+        Like like = Like.findById(new ObjectId(likeId))
+        if(like != null){
+            like.delete()
+        }
+
+    }
+
 
 
     List<Comment> getCommentListForPost(String postId){
@@ -335,18 +377,37 @@ class MongoService {
     }
 
 
-    List<Like> getUserLikesForPost(String postId){
-        return Like.findAllByLikedObjectIdAndLikedObjectType(postId, Constants.LIKE_POST_STRING)
+    List<Like> getUserLikes(String objectId, String objectType){
+        return Like.findAllByLikedObjectIdAndLikedObjectType(objectId, objectType.toString())
     }
 
 
-    void addUserLike(String likedObjectId, def postParams){
+    Like saveLike(String likedObjectId, def postParams){
         Like userLike = new Like()
-        userLike.likedBy = Long.parseLong(postParams.userId + "")
+        userLike.likedBy = Long.parseLong(postParams.likedById + "")
         userLike.likedOn = System.currentTimeMillis()
         userLike.likedObjectId = likedObjectId
         userLike.likedObjectType = postParams.likedObjectType.toLowerCase()  //can be either "post" or "comment"
-        userLike.save(flush: true, failOnError: true)
+        return userLike.save(failOnError: true)
+    }
+
+
+    def saveGuidePost(def postParams){
+        GuidePost.withTransaction { status ->
+            def guidePostId = createOrModifyGuidePost(postParams, null)
+            sendNotification(guidePostId.toString(), postParams, Constants.PostType.GUIDE)
+            return guidePostId;
+        }
+
+    }
+
+
+    ObjectId saveTravellerPost(def postParams){
+        TravellerPost.withTransaction { status ->
+            ObjectId postId = createOrModifyTravellerPost(postParams, null)
+            sendNotification(postId.toString(), postParams, Constants.PostType.TRAVELLER)
+            return postId
+        }
     }
 
 

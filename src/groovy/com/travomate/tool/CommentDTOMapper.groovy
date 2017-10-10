@@ -11,9 +11,11 @@ import com.travomate.dto.CommentDTO
 @Singleton(lazy = true)
 class CommentDTOMapper {
 
+    UserProfileDTOMapper userProfileDTOMapper = UserProfileDTOMapper.getInstance()
+
     public CommentDTO[] mapCommentListToCommentDTOArray(List<Comment> comentList){
-        if(comentList == null || comentList?.isEmpty()){
-            return null
+        if(comentList == null){
+            return
         }
 
         List<CommentDTO> commentDTOs = new ArrayList<CommentDTO>()
@@ -31,10 +33,10 @@ class CommentDTOMapper {
         }
 
         CommentDTO commentDTO = new CommentDTO()
-        commentDTO.id = comment.id
+        commentDTO.id = comment.id.toString()
         commentDTO.postId = comment.postId
         commentDTO.postDate = comment.postDate
-        commentDTO.postedBy =  UserProfile.findByUser(User.get(comment.postedBy))
+        commentDTO.postedBy =  userProfileDTOMapper.mapUserProfileToUserProfileDTO(UserProfile.findByUser(User.get(comment.postedBy)))
         commentDTO.commentText = comment.commentText
         commentDTO.parentCommentId = comment.parentCommentId
 

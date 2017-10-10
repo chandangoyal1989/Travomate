@@ -5,6 +5,7 @@ package com.travomate.dto
  */
 class TripReviewAlbumDTO {
     TripReviewDTO tripReviewDTO
+    Long id
     String imageLoc
     Boolean isCover
 }

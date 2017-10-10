@@ -9,10 +9,14 @@ import com.travomate.tool.TripReviewAlbumDTOMapper
 import com.travomate.tool.TripReviewDTOMapper
 import com.travomate.tool.UserDTOMapper
 import com.travomate.tool.UserProfileDTOMapper
+import org.apache.commons.io.FileUtils
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.commons.CommonsMultipartFile
 
+import java.nio.file.Files
 import java.text.SimpleDateFormat
 
+@Transactional
 class RestAPIService {
 
     def utilityService
@@ -287,8 +291,10 @@ class RestAPIService {
         Boolean isFriendRequestSent = false;
         User sender = User.get(fromUserId)
         User recipient = User.get(toUserId)
+        log.info("sender "+sender + " recipeitn "+recipient)
         UserFriendRequest userFriendRequest1 = UserFriendRequest.findByRecipientAndSender(sender, recipient);
-        UserFriendRequest userFriendRequest = UserFriendRequest.findByRecipientAndSender(recipient, sender)
+        UserFriendRequest userFriendRequest = UserFriendRequest.findByRecipientAndSender(recipient, sender);
+//        log.info(userFriendRequest1 + " " + userFriendRequest)
         if(userFriendRequest != null || userFriendRequest1 != null){
             isFriendRequestSent = true
         }
@@ -357,13 +363,14 @@ class RestAPIService {
 
 
     public Boolean saveFriendship(Long fromUserId, Long toUserId) {
-        Boolean isSaved = true
+        Boolean isSaved = false
         User recipient = getUser(toUserId)
         User sender = getUser(fromUserId)
         System.out.println("recipient " + recipient + " sender " + sender)
         if (recipient != null && sender != null) {
             List<UserFriends> existingFriendList = UserFriends.findAllByProfileUserInListAndFriendInList([recipient, sender],[recipient, sender])
-            if(existingFriendList == null) {
+            log.info("existingFriendList "+existingFriendList)
+            if(existingFriendList == null || existingFriendList?.size() == 0) {
                 UserFriends friendship1 = new UserFriends()
                 friendship1.profileUser = recipient
                 friendship1.friend = sender
@@ -382,10 +389,9 @@ class RestAPIService {
 
                 //delete friend request
                 deleteFriendRequest(fromUserId, toUserId)
+                isSaved = true
             }
 
-        } else {
-            isSaved = false
         }
 
         return isSaved
@@ -464,21 +470,56 @@ class RestAPIService {
         return tripReviewExpandoList
     }
 
-    public TripReview saveTripReview(def params, Long userId) {
-        TripReview tripReview = null
-        Long tripReviewId = params.tripReviewId != null ? Long.parseLong(params.tripReviewId + "") : null
-        if (tripReviewId != 0) {
-            tripReview = TripReview.get(Long.parseLong(params.tripReviewId))
-        } else {
-            tripReview = new TripReview()
+    public Boolean checkIfTripReviewWithSameNameExists(String tripReviewTitle, User user, Long tripReviewId){
+        TripReview tripReview = user != null ? TripReview.findByTitleAndUser(tripReviewTitle, user) : TripReview.findByTitle(tripReviewTitle)
+        log.info("checkIfTripReviewWithSameNameExists tripReviewID : " + tripReviewId + " db tripReview Id : " + tripReview?.id)
+        if(tripReview != null ){
+            if((tripReviewId != 0 && tripReviewId == tripReview.id)) {
+                return false
+            } else {
+                return true
+            }
         }
-        tripReview.user = User.get(userId)
-        tripReview.routeToTake = params.routeToTake
-        tripReview.timeToVisit = params.timeToVisit
-        tripReview.tripDescription = params.tripDescription
-        tripReview.title = params.title
-        tripReview = tripReview.save(flush: true, failOnError: true)
+        return false
+    }
+
+    public TripReview saveTripReview(def params, Long userId, Long tripReviewId) {
+        TripReview tripReview = null
+        User user = (userId != null) ? User.get(userId) : null
+        log.info("saveTripReview : " + user)
+        Boolean isDuplicate = checkIfTripReviewWithSameNameExists(params.title, user, tripReviewId)
+        log.info("isDuplicate trip review : " + isDuplicate)
+        if(isDuplicate){
+            log.info("Duplicate trip review title")
+        } else {
+
+            if (tripReviewId != 0) {
+                tripReview = TripReview.get(tripReviewId)
+            } else {
+                tripReview = new TripReview()
+            }
+            if (userId != null) {
+                tripReview.user = User.get(userId)
+            }
+            log.info("Trip review : " + tripReview)
+            tripReview.routeToTake = params.routeToTake
+            tripReview.timeToVisit = params.timeToVisit
+            tripReview.tripDescription = params.tripDescription
+            tripReview.title = params.title
+            tripReview = tripReview.save(flush: true, failOnError: true)
+            log.info("saved Trip review : " + tripReview.title)
+        }
         return tripReview
+    }
+
+
+    public void deleteTripReview(Long tripReviewId){
+        TripReview toBeDeleted = TripReview.get(tripReviewId)
+
+        //Delete related tripreview album and cover pic
+        deleteAllTripReviewImages(toBeDeleted)
+
+        toBeDeleted.delete();
     }
 
 
@@ -493,15 +534,37 @@ class RestAPIService {
     }
 
 
-    public Boolean saveTripReviewImage(User user, String picType, CommonsMultipartFile photo, TripReview tripReview) {
+    public void deleteAllTripReviewImages(TripReview tripReview){
+        List<TripReviewAlbum> tripReviewAlbumList = TripReviewAlbum.findAllByTripReview(tripReview);
+        TripReviewAlbum.deleteAll(tripReviewAlbumList)
+        String toBeDeletedDir = Constants.IMAGE_BASE_DIR + tripReview.user.id + Constants.FILE_PATH_DELIMITER  + Constants.TRIP_REVIEW_IMAGE_DIR + Constants.FILE_PATH_DELIMITER + tripReview.title + "_" + tripReview.id + Constants.FILE_PATH_DELIMITER + Constants.TRIP_REVIEW_ALBUM_DIR + Constants.FILE_PATH_DELIMITER
+        FileUtils.deleteDirectory(new File(toBeDeletedDir));
+    }
+
+
+    public TripReviewAlbum saveTripReviewImage(User user, String picType, CommonsMultipartFile photo, Long tripReviewId, String tripReviewTitle) {
         String picName = photo.originalFilename
         String imageBaseDir = Constants.IMAGE_BASE_DIR
         String imageLoc = null
+        TripReview tripReview = null
+        if(tripReviewId == 0){
+            Boolean isDuplicate = checkIfTripReviewWithSameNameExists(tripReviewTitle, user, tripReviewId)
+            log.info("isDuplicate trip review : " + isDuplicate)
+            if(isDuplicate){
+                return null
+            }
+            tripReview = new TripReview()
+            tripReview.user = user
+            tripReview.title = tripReviewTitle
+            tripReview = tripReview.save(failOnError: true)
+        } else {
+            tripReview = TripReview.get(tripReviewId)
+        }
 
         TripReviewAlbum tripReviewAlbum = new TripReviewAlbum();
         tripReviewAlbum.tripReview = tripReview
         String todaysDate = new SimpleDateFormat("dd-MMM-yyyy").format(new Date());
-        String tripReviewDir = tripReview.title + "_" + todaysDate;
+        String tripReviewDir = tripReview.title + "_" + tripReview.id;
         if (Constants.TRIP_REVIEW_COVER_IMAGE.equalsIgnoreCase(picType)) {
             TripReviewAlbum currentCoverPic = TripReviewAlbum.findByTripReviewAndIsCover(tripReview, true);
             if(currentCoverPic != null){
@@ -510,22 +573,34 @@ class RestAPIService {
             }
             imageLoc = imageBaseDir + user.id + Constants.FILE_PATH_DELIMITER + Constants.TRIP_REVIEW_IMAGE_DIR + Constants.FILE_PATH_DELIMITER + tripReviewDir + Constants.FILE_PATH_DELIMITER + Constants.TRIP_REVIEW_COVER_PIC_DIR + Constants.FILE_PATH_DELIMITER
             tripReviewAlbum.isCover = true
-
-
         } else if (Constants.TRIP_REVIEW_ALBUM.equalsIgnoreCase(picType)) {
             imageLoc = imageBaseDir + user.id + Constants.FILE_PATH_DELIMITER  + Constants.TRIP_REVIEW_IMAGE_DIR + Constants.FILE_PATH_DELIMITER + tripReviewDir + Constants.FILE_PATH_DELIMITER + Constants.TRIP_REVIEW_ALBUM_DIR + Constants.FILE_PATH_DELIMITER
             tripReviewAlbum.isCover = false
-        } else {
-            return false
         }
         tripReviewAlbum.imageLoc = imageLoc + picName
         log.info("user id : " + user.id + " pictype : " + picType + " picName : " + picName + " imageloc : " + imageLoc)
-        tripReviewAlbum.save(flush: true, failOnError: true)
-
-
+        tripReviewAlbum = tripReviewAlbum.save(flush: true, failOnError: true)
 
         saveImageFileToSystem(imageLoc, photo)
 
-        return true
+        return tripReviewAlbum
+
+    }
+
+
+    public void deleteTripReviewImage(Long imageId){
+        TripReviewAlbum reviewImage = TripReviewAlbum.get(imageId)
+        String imageLoc = reviewImage.imageLoc
+        reviewImage.delete()
+        File fileToBeDeleted = new File(imageLoc)
+        try{
+            Boolean isDeleted = Files.deleteIfExists(fileToBeDeleted.toPath())
+            log.info("File with id ${imageId} got deleted : " + isDeleted)
+        } catch(Exception e){
+            log.info("Image with id ${imageId} could not be deleted")
+            e.printStackTrace()
+        }
+
+
     }
 }

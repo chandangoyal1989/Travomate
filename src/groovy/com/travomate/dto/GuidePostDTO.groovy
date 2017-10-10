@@ -6,10 +6,12 @@ package com.travomate.dto
 class GuidePostDTO {
 
     String id
-    Long userId
+    UserProfileDTO user
     String place
-    String serviceTime
-    String serviceDate
+    String serviceStartTime
+    String serviceEndTime
+    String serviceFromDate
+    String serviceToDate
     String serviceDescription
     String postDescription
 

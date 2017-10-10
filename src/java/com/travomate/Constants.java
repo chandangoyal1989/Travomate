@@ -47,6 +47,8 @@ public class Constants {
 
     public static final String RECIPIENT_FRIEND_REQUEST_API_PATH_STR = "recipient";
     public static final String SENDER_FRIEND_REQUEST_API_PATH_STR = "sender";
+    public static final String TRIP_REVIEW_COVER_PIC_DIR = "cover_image";
+    public static final String TRIP_REVIEW_ALBUM_DIR = "trip_review_album";
 
 
 }

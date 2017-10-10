@@ -9,12 +9,13 @@ class Comment {
     ObjectId id
     String commentText
     String postId
-    Long postedBy
+    Long postedById
     String postDate
     String parentCommentId
 
 
     static constraints = {
+        parentCommentId nullable:true
     }
 
     static mapping = {

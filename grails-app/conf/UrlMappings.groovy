@@ -119,16 +119,42 @@ class UrlMappings {
 			action = [POST: "addComment", GET: "getComments"]
 		}
 
+		"/api/comment/edit/${commentId}"(controller: "restAPI") {
+			action = [PUT : "editComment", DELETE: "deleteComment"]
+		}
+
 		"/api/like/${objectId}"(controller: "restAPI") {
 			action = [POST: "addPostLike", GET:"getPostLikes"]
+		}
+
+
+		"/api/like/${objectId}/${objectType}"(controller: "restAPI") {
+			action = [GET:"getLikesForAnObject"]
+		}
+
+
+		"/api/like/edit/${likeId}" (controller: "restAPI") {
+			action = [DELETE: "deleteLike"]
 		}
 
 		"/api/resetPassword" (controller: "restAPI") {
 			action = [POST: "resetPassword"]
 		}
 
-		"/api/tripreview/${userid}"(controller: "restAPI") {
-			action = [GET: "getTripReview", POST: "saveTripReview"]
+		"/api/tripreview/${userid}/list"(controller: "restAPI") {
+			action = [GET: "getTripReview"]
+		}
+
+		"/api/tripreview/${userid}/save"(controller: "restAPI") {
+			action = [POST: "saveTripReview"]
+		}
+
+		"/api/tripreview/${tripReviewId}"(controller: "restAPI") {
+			action = [PUT: "editTripReview", DELETE: "deleteTripReview"]
+		}
+
+		"/api/tripreview/deleteImage/${imageId}"(controller: "restAPI") {
+			action = [DELETE: "deleteTripReviewImage"]
 		}
 
 		"/api/tripreview/uploadPic/${userid}/${tripReviewId}/${title}/${picType}"(controller: "restAPI") {

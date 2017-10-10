@@ -34,6 +34,7 @@ class TripReviewAlbumDTOMapper {
 
         TripReviewAlbumDTO tripReviewAlbumDTO = new TripReviewAlbumDTO()
 //        tripReviewAlbumDTO.tripReviewDTO = tripReviewDTOMapper.mapTripReviewToTripReviewDTO(tripReviewAlbum.tripReview)
+        tripReviewAlbumDTO.id = tripReviewAlbum.id
         tripReviewAlbumDTO.imageLoc = tripReviewAlbum.imageLoc?.replace(Constants.IMAGE_ROOT_DIR,"/")
         tripReviewAlbumDTO.isCover = tripReviewAlbum.isCover
 

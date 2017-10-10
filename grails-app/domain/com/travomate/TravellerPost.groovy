@@ -13,6 +13,8 @@ class TravellerPost {
     String destination
     String startDate
     String endDate
+    String startTime
+    String endTime
     String postDescription
     String postTime
 
