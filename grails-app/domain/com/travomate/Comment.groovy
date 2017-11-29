@@ -12,6 +12,8 @@ class Comment {
     Long postedById
     String postDate
     String parentCommentId
+    String updatedOn
+    String postType
 
 
     static constraints = {

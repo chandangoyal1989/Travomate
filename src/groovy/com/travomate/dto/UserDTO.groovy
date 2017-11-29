@@ -17,4 +17,5 @@ class UserDTO {
     boolean isExternalLogin
     boolean isContactVerified
     boolean isEmailVerified
+    String deviceId
 }

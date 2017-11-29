@@ -25,13 +25,16 @@ class RestAPIController extends Rest{
 
     def index() {}
 
+    /**
+     * Login API
+     * @return
+     */
     def login(){
         def postParams = JSON.parse(request.JSON.toString())
         String contact = postParams.contact
         String inputPassword = postParams.password
         String email = postParams.email
         String oAuthServiceName = postParams.oAuthServiceName
-        log.info("login postparams : "+postParams)
         User user = null
         if(contact != null) {
             user = User.findByContact(contact)
@@ -41,13 +44,11 @@ class RestAPIController extends Rest{
         if(user == null){
             authenticationFailure("User is not logged in")
         } else if(!user.isExternalLogin && !user.isContactVerified){
-            log.info "else if"
-            authenticationFailure("User is not verified")
+           authenticationFailure("User is not verified")
         } else {
-            log.info("in else")
             String sid = authenticationService.createSession(user)
             Integer isVerified = 0
-            log.info "oAuthServiceName " + postParams.oAuthServiceName
+            log.info "oAuthAuthentication with service :" + postParams.oAuthServiceName
             if (oAuthServiceName == null) {
                 isVerified = authenticationService.verifyPassword(user, inputPassword)
             } else {
@@ -67,6 +68,10 @@ class RestAPIController extends Rest{
         }
     }
 
+    /**
+     * Sign up API
+     * @return
+     */
     def signup() {
         def postParams = JSON.parse(request.JSON.toString())
         Integer userExists = authenticationService.createUser(postParams)
@@ -78,8 +83,13 @@ class RestAPIController extends Rest{
             success("User exists and contact verified")
         }
 
-
     }
+
+
+    /**
+     * API to send message to user's device
+     * @return
+     */
 
     def sendMsg() {
         def postParams = JSON.parse(request.JSON.toString())
@@ -107,6 +117,12 @@ class RestAPIController extends Rest{
 
     }
 
+
+
+    /**
+     * API to verify the OTP submitted by user
+     * @return
+     */
     def verifyOTP(){
         def postParams = JSON.parse(request.JSON.toString())
         User user = null
@@ -139,6 +155,12 @@ class RestAPIController extends Rest{
         }
     }
 
+
+
+    /**
+     * API to send OTP mail to user
+     * @return
+     */
     def sendMail() {
         def mailParameters = JSON.parse(request.JSON.toString())
         String mailId = mailParameters.mailId
@@ -150,7 +172,7 @@ class RestAPIController extends Rest{
 
             log.info("OTP for user : " + userid + " is " + otp)
 
-            //Mail scenario using Grails Plugin
+            //Send A/c verification mail using Grails Plugin
             try {
                 mailService.sendMail {
                     from "travomateotp@gmail.com"
@@ -173,9 +195,11 @@ class RestAPIController extends Rest{
         }
     }
 
-
+    /**
+     * API to upload pic
+     * @return
+     */
     def uploadPic(){
-//        def postParams = JSON.parse(request.JSON.toString())
         Long userId = params.userid != null ? Long.parseLong(params.userid + "") : null
         User user = User.get(userId)
         if(user != null) {
@@ -195,13 +219,15 @@ class RestAPIController extends Rest{
         }
     }
 
+    /**
+     * API to create user's profile
+     * @return
+     */
     def createProfile(){
         def postParams = JSON.parse(request.JSON.toString())
-        log.info("post params : "+postParams)
         Long userId = params.userid != null ? Long.parseLong(params.userid) : null
         User user = User.get(userId)
         if(userId != null){
-
             restAPIService.createOrModifyProfile(user, postParams)
             success("Profile Changes done")
         } else {
@@ -209,7 +235,10 @@ class RestAPIController extends Rest{
         }
     }
 
-
+    /**
+     * API to delete profile
+     * @return
+     */
     def deleteProfile(){
         Long userId = params.userid != null ? Long.parseLong(params.userid) : null
         User user = User.get(userId)
@@ -222,8 +251,13 @@ class RestAPIController extends Rest{
     }
 
 
+
+    /**
+     * API to get the list of images (based on the picType) of a user
+     * @return
+     */
+
     def getImage(){
-//        def postParams = JSON.parse(request.JSON.toString())
         Long userId = params.userid != null ? Long.parseLong(params.userid + "") : null
         User user = User.get(userId)
         if(user != null) {
@@ -240,12 +274,14 @@ class RestAPIController extends Rest{
         }
     }
 
-
+    /**
+     * API to get user's profile details
+     * @return
+     */
     def showProfile() {
         Long userId = params.userid != null ? Long.parseLong(params.userid) : null
         User user = User.get(userId)
         if(userId != null){
-
             UserProfile profile = restAPIService.getProfile(user)
             UserProfileDTO userProfileDTO = userProfileDTOMapper.mapUserProfileToUserProfileDTO(profile)
             Expando profileResponse = new Expando()
@@ -258,17 +294,21 @@ class RestAPIController extends Rest{
     }
 
 
+    /**
+     * API to send friend request
+     * @return
+     */
     def sendFriendRequest(){
         def postParams = JSON.parse(request.JSON.toString())
         Long fromUserId = postParams.fromUserId != null ? Long.parseLong(postParams.fromUserId + "") : null
         Long toUserId = postParams.toUserId != null ? Long.parseLong(postParams.toUserId + "") : null
-        log.info("from user id : "+fromUserId+" to user id : "+toUserId)
+        log.info("friend request from user id : "+fromUserId+" to user id : "+toUserId)
         if(fromUserId != null && toUserId != null){
             Boolean isFriendRequestSent = restAPIService.checkIfFriendRequestAlreadySent(fromUserId, toUserId)
             log.info("isFriendRequestSent " + isFriendRequestSent)
             if(!isFriendRequestSent) {
                 Boolean isFriend = restAPIService.checkIfSenderIsAlreadyAFriend(fromUserId, toUserId)
-                log.info("isFriend " + isFriend)
+                log.info("checkIfSenderIsAlreadyAFriend " + isFriend)
                 if(isFriend){
                     success("User is already a friend")
                 } else {
@@ -280,7 +320,6 @@ class RestAPIController extends Rest{
                     }
                 }
             } else {
-
                 success("Friend request already sent")
             }
         } else {
@@ -289,11 +328,16 @@ class RestAPIController extends Rest{
     }
 
 
+
+    /**
+     * API to accept a friend request
+     * @return
+     */
     def acceptFriendRequest(){
         def postParams = JSON.parse(request.JSON.toString())
         Long fromUserId = postParams.fromUserId != null ? Long.parseLong(postParams.fromUserId + "") : null
         Long toUserId = postParams.toUserId != null ? Long.parseLong(postParams.toUserId + "") : null
-        log.info("from user id : "+fromUserId+" to user id : "+toUserId)
+        log.info("acceptFriendRequest from user id : "+fromUserId+" by user id : "+toUserId)
         if(fromUserId != null && toUserId != null){
             Boolean isSaved = restAPIService.saveFriendship(fromUserId, toUserId)
             if(isSaved){
@@ -307,6 +351,11 @@ class RestAPIController extends Rest{
     }
 
 
+
+    /**
+     * API to get a list of pending friend requests
+     * @return
+     */
     def showFriendRequests(){
         Long profileUserId = params.profileUserId != null ? Long.parseLong(params.profileUserId) : null
         if(profileUserId != null){
@@ -324,6 +373,10 @@ class RestAPIController extends Rest{
     }
 
 
+    /**
+     * API to unfriend a user
+     * @return
+     */
     def deleteFriend(){
         Long profileUserId = params.profileUserId != null ? Long.parseLong(params.profileUserId) : null
         Long toBeDeletedUserId = params.toBeDeletedUserId != null ? Long.parseLong(params.toBeDeletedUserId) : null
@@ -340,6 +393,10 @@ class RestAPIController extends Rest{
     }
 
 
+    /**
+     * API to delete friend request
+     * @return
+     */
     def deleteFriendRequest(){
         Long senderId = params.senderId != null ? Long.parseLong(params.senderId) : null
         Long recipientId = params.recipientId != null ? Long.parseLong(params.recipientId) : null
@@ -351,6 +408,12 @@ class RestAPIController extends Rest{
         }
     }
 
+
+
+    /**
+     * API to get the list of friends
+     * @return
+     */
     def getFriends(){
         Long profileUserId = params.profileUserId ? Long.parseLong(params.profileUserId) : null
         if(profileUserId != null){
@@ -366,19 +429,26 @@ class RestAPIController extends Rest{
         }
     }
 
-
+    /**
+     * Mongo test API
+     * @return
+     */
     def insertMongo(){
         log.info("in insertMongo action")
         mongoService.insertMongo()
         success("Mongo object saved")
     }
 
+
+
+    /**
+     * API to submit traveller post
+     * @return
+     */
     def postTravellerFeed() {
         log.info(" in post feed")
         def postParams = JSON.parse(request.JSON.toString())
         ObjectId postId = mongoService.saveTravellerPost(postParams)
-//        ObjectId postId = mongoService.createOrModifyTravellerPost(postParams, null)
-//        mongoService.sendNotification(postId.toString(), postParams, Constants.PostType.TRAVELLER)
         Expando resultExpando = new Expando()
         resultExpando.postId = postId.toString()
         JSON results = resultExpando.properties as JSON
@@ -386,8 +456,11 @@ class RestAPIController extends Rest{
 
     }
 
+    /**
+     * API to delete traveller feed
+     * @return
+     */
     def deleteTravellerFeed(){
-//        Long postId = params.postId != null ? Long.parseLong(params.postId + "") : null
         String postId = params.postId
         if(postId != null) {
             mongoService.deleteNotifications(postId)
@@ -397,6 +470,11 @@ class RestAPIController extends Rest{
         }
     }
 
+
+    /**
+     * API to modify a traveller's post
+     * @return
+     */
     def editTravellerPost(){
         def postId = new ObjectId(params.postId)
         def postParams = JSON.parse(request.JSON.toString())
@@ -408,8 +486,11 @@ class RestAPIController extends Rest{
         }
     }
 
+    /**
+     * API to get a list of traveller posts
+     * @return
+     */
     def getTravellerFeeds(){
-        log.info("getTravellerFeeds")
         def topPosts = mongoService.getLatestTravellerFeeds(Integer.parseInt(params.offset))
         TravellerPostDTO[] travellerPostDTOs = travellerPostDTOMapper.mapTravellerPostListToTravellerPostDTOArray(topPosts)
         Expando travellerFeedResponse = new Expando()
@@ -418,19 +499,24 @@ class RestAPIController extends Rest{
         success(results)
     }
 
-
+    /**
+     * API to submit Guide post
+     * @return
+     */
     def postGuideFeed(){
-        log.info(" in postGuideFeed")
         def postParams = JSON.parse(request.JSON.toString())
         def guidePostId = mongoService.saveGuidePost(postParams)
-//        def guidePostId = mongoService.createOrModifyGuidePost(postParams, null)
-//        mongoService.sendNotification(guidePostId.toString(), postParams, Constants.PostType.GUIDE)
         Expando resultExpando = new Expando()
         resultExpando.postId = guidePostId.toString()
         JSON results = resultExpando.properties as JSON
         success(results, "Guide Post saved")
     }
 
+
+
+    /**API to delete guide post
+     * @return
+     */
     def deleteGuidePost(){
         log.info("In deleteGuidePost")
         String postId = params.postId
@@ -443,6 +529,10 @@ class RestAPIController extends Rest{
         }
     }
 
+    /**
+     * API to get the list of guide posts
+     * @return
+     */
     def getGuideFeeds(){
         log.info("getGuideFeeds")
         def topPosts = mongoService.getTopGuideFeeds(Integer.parseInt(params.offset))
@@ -453,7 +543,10 @@ class RestAPIController extends Rest{
         success(results)
     }
 
-
+    /**
+     * API to edit a guide post
+     * @return
+     */
     def modifyGuidePost(){
         log.info("In modifyGuidePost")
         def postId = new ObjectId(params.postId)
@@ -466,6 +559,10 @@ class RestAPIController extends Rest{
         }
     }
 
+    /**
+     * API to store the user's lat-long in db
+     * @return
+     */
     def storeUserLocation(){
         log.info("In storeUserLocation")
         def postParams = JSON.parse(request.JSON.toString())
@@ -474,6 +571,11 @@ class RestAPIController extends Rest{
 
     }
 
+
+    /**
+     * API to find users within a radius of 5km of a position (lat-long)
+     * @return
+     */
     def findNearUsers(){
 
         def postParams = JSON.parse(request.JSON.toString())
@@ -490,7 +592,10 @@ class RestAPIController extends Rest{
 
     }
 
-
+    /**
+     * API to get the list of notification for a user
+     * @return
+     */
     def userNotification(){
         def postParams = JSON.parse(request.JSON.toString())
         Long userId = Long.parseLong(params.profileUserId + "")
@@ -504,6 +609,10 @@ class RestAPIController extends Rest{
         success(results)
     }
 
+    /**
+     * Search API
+     * @return
+     */
     def searchUser(){
         String userName = params.name
         Long userId = params.userId ? Long.parseLong(params.userId) : null
@@ -517,22 +626,25 @@ class RestAPIController extends Rest{
         success(results)
     }
 
-
+    /**
+     * API to add the comment
+     * @return
+     */
     def addComment(){
         def postParams = JSON.parse(request.JSON.toString())
-        log.info("addComment postParams : " + postParams)
-        String postId = params.postId
-        Comment savedComment = mongoService.saveComment(null, postId, postParams)
+        Comment savedComment = mongoService.saveComment(null, params, postParams)
         Expando commentResponse = new Expando()
         commentResponse.id = savedComment.id.toString()
         JSON results = commentResponse.properties as JSON
         success(results, "Comments added to Post")
     }
 
-
+    /**
+     * API to edit the comment
+     * @return
+     */
     def editComment(){
         def postParams = JSON.parse(request.JSON.toString())
-        log.info("editComment postParams : " + postParams)
         String commentId = params.commentId
         Comment savedComment = mongoService.saveComment(commentId, null, postParams)
         if(savedComment != null){
@@ -545,7 +657,10 @@ class RestAPIController extends Rest{
         }
     }
 
-
+    /**
+     * API to delete the comment
+     * @return
+     */
     def deleteComment(){
         String commentId = params.commentId
         if(commentId != null){
@@ -557,9 +672,13 @@ class RestAPIController extends Rest{
     }
 
 
+    /**
+     * API to get the list of comments for a post
+     * @return
+     */
     def getComments(){
         String postId = params.postId
-        List<Comment> commentList = mongoService.getCommentListForPost(postId)
+        List<Comment> commentList = mongoService.getCommentListForPost(params)
         List<Expando> commentExpandoList = new ArrayList<Expando>()
         Expando commentExpando = null
         commentList?.each{ comment ->
@@ -569,8 +688,11 @@ class RestAPIController extends Rest{
             commentExpando.postDate = comment.postDate
             commentExpando.postedBy = userProfileDTOMapper.mapUserProfileToUserProfileDTO(UserProfile.findByUser(User.get(comment.postedById)))
             log.info("postID : " + postId + " comment id : " + comment.id.toString())
+
+            /*
             List<Comment> replies = Comment.findAllByPostIdAndParentCommentId(postId, comment.id.toString())
             commentExpando.replies = commentDTOMapper.mapCommentListToCommentDTOArray(replies)
+            */
 
             //Add comment likes
             List<Like> commentLikes = Like.findAllByLikedObjectIdAndLikedObjectType(comment.id.toString(), Constants.LIKE_COMMENT_STRING)
@@ -586,6 +708,27 @@ class RestAPIController extends Rest{
     }
 
 
+
+    /**
+     * API to get the replies for a given comment
+     * @return
+     */
+    def getReplies(){
+        String commentId = params.commentId;
+        List<Comment> replyList = mongoService.getRepliesForComment(commentId)
+        Expando replyResponse = new Expando()
+        replyResponse.replies = commentDTOMapper.mapCommentListToCommentDTOArray(replyList)
+        replyResponse.commentId = commentId
+        JSON results = replyResponse.properties as JSON
+        success(results)
+
+    }
+
+
+    /**
+     * API to like a post
+     * @return
+     */
     def addPostLike(){
         def postParams = JSON.parse(request.JSON.toString())
         String likedObjectId = params.objectId
@@ -597,8 +740,10 @@ class RestAPIController extends Rest{
     }
 
 
-
-
+    /**
+     * API to remove the like from a post
+     * @return
+     */
     def deleteLike(){
         String likeId = params.likeId
         if(likeId != null){
@@ -610,6 +755,11 @@ class RestAPIController extends Rest{
     }
 
 
+
+    /**
+     * API to get the no of likes for a post/comment
+     * @return
+     */
     def getLikesForAnObject(){
         String likedObjectId = params.objectId
         String likedObjectType = params.objectType
@@ -623,6 +773,11 @@ class RestAPIController extends Rest{
     }
 
 
+
+    /**
+     * Reset Password API
+     * @return
+     */
     def resetPassword(){
         def postParams = JSON.parse(request.JSON.toString())
         String newPassword = postParams.password
@@ -637,8 +792,12 @@ class RestAPIController extends Rest{
 
     }
 
+
+    /**
+     * API to get the list of trip reviews posted by a user
+     * @return
+     */
     def getTripReview(){
-        log.info("get trip review")
         Long userId = params.userid != null ? Long.parseLong(params.userid) : null
         Expando tripReviewExpando = new Expando()
         tripReviewExpando.userTripReviews = restAPIService.getTripReviews(userId)
@@ -647,6 +806,10 @@ class RestAPIController extends Rest{
     }
 
 
+    /**
+     * API to save trip review posted by a user
+     * @return
+     */
     def saveTripReview(){
         def postParams = JSON.parse(request.JSON.toString())
         Long userId = params.userid ? Long.parseLong(params.userid) : null
@@ -668,6 +831,10 @@ class RestAPIController extends Rest{
     }
 
 
+    /**
+     * API to modify a trip review
+     * @return
+     */
     def editTripReview(){
         Long tripReviewId = params.tripReviewId != null ? Long.parseLong(params.tripReviewId) : null
         TripReview tripReview = TripReview.get(tripReviewId)
@@ -687,7 +854,10 @@ class RestAPIController extends Rest{
         }
     }
 
-
+    /**
+     * API to delete a trip review
+     * @return
+     */
     def deleteTripReview(){
         Long tripReviewId = params.tripReviewId != null ? Long.parseLong(params.tripReviewId) : null
         TripReview tripReview = TripReview.get(tripReviewId)
@@ -700,6 +870,10 @@ class RestAPIController extends Rest{
     }
 
 
+    /**
+     * API to upload trip review pics
+     * @return
+     */
     def uploadTripReviewPic(){
 
         Long userId = params.userid != null ? Long.parseLong(params.userid + "") : null
@@ -731,6 +905,10 @@ class RestAPIController extends Rest{
         }
     }
 
+    /**
+     * API to delete a trip review pic
+     * @return
+     */
     def deleteTripReviewImage(){
         Long imageId = params.imageId != null ? Long.parseLong(params.imageId) : null
         if(imageId != null){
@@ -741,7 +919,20 @@ class RestAPIController extends Rest{
         }
     }
 
+    /**
+     * Test API
+     * @return
+     */
+    def testFCMNotifications(){
+        String deviceToken = "APA91bHdM0M9_EjxbUoWnhbqdmdskskXQR5KyTuYXdwr80l_7aAKUWyf3Fe_2-qOoXWJroASi4dzq1XRqS8w02oh6XbbVHeOASsnoVUusUj8IJAaXlSN0nDD_rzAfBBsIMNK3OV0ftmWXqGw_K4KHykS7tjcgoP-kg";
+        String status = restAPIService.sendFCMNotification(deviceToken, Constants.NotificationType.FRIENDS);
+        success("Notification sent");
+    }
 
+    /**
+     * Logout API
+     * @return
+     */
     def logout() {
         authenticationService.deleteSession(params.sid)
         success("User session deleted")

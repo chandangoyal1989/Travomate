@@ -36,7 +36,7 @@ class CommentDTOMapper {
         commentDTO.id = comment.id.toString()
         commentDTO.postId = comment.postId
         commentDTO.postDate = comment.postDate
-        commentDTO.postedBy =  userProfileDTOMapper.mapUserProfileToUserProfileDTO(UserProfile.findByUser(User.get(comment.postedBy)))
+        commentDTO.postedBy =  userProfileDTOMapper.mapUserProfileToUserProfileDTO(UserProfile.findByUser(User.get(comment.postedById)))
         commentDTO.commentText = comment.commentText
         commentDTO.parentCommentId = comment.parentCommentId
 

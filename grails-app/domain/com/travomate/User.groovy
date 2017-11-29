@@ -20,6 +20,7 @@ class User {
     boolean passwordExpired
     boolean isContactVerified
     boolean isEmailVerified
+    String deviceId
 
     static constraints = {
         firstName nullable: true
@@ -32,7 +33,7 @@ class User {
         gender nullable: true
         dateOfBirth nullable: true
         isExternalLogin nullable:true
-
+        deviceId nullable: true
     }
 
     static mapping = {

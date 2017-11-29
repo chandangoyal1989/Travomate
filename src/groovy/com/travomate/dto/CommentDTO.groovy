@@ -9,4 +9,5 @@ class CommentDTO {
     UserProfileDTO postedBy
     String postDate
     String parentCommentId
+    String updatedOn
 }

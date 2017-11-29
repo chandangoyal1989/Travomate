@@ -51,4 +51,8 @@ public class Constants {
     public static final String TRIP_REVIEW_ALBUM_DIR = "trip_review_album";
 
 
+    public final static String AUTH_KEY_FCM = "AIzaSyBh5nInaMcXvaOvbAOs9oNNfn1BsC9OfUA";
+    public final static String API_URL_FCM = "https://fcm.googleapis.com/fcm/send";
+
+
 }

@@ -11,15 +11,11 @@ import com.mongodb.Mongo
 import com.mongodb.MongoClient
 import org.bson.types.ObjectId
 
-//import org.mongodb.morphia.Datastore
-//import org.mongodb.morphia.Morphia
-
 
 class MongoService {
 
     static transactional = 'mongo'
 
-//    Datastore datastore = null
     private static  Mongo _mongo;
 
     public   void setupMongo() throws Exception {
@@ -37,11 +33,8 @@ class MongoService {
 
 
 
-//    def mongo
    ObjectId createOrModifyTravellerPost(def postParams, ObjectId postId){
        System.out.println("in saveTravellerPost")
-//       def mongo = new GMongo()
-//       def db = mongo.getDB("travomate")
        TravellerPost tp = null
        if(postId != null){
            tp = TravellerPost.get(postId)
@@ -77,11 +70,6 @@ class MongoService {
        }
         log.info("Saved Traveller Post : "+tp.id)
        return tp.id
-
-//        def post = new TravellerPost(source:"delhi", destination: "Mathura", startDate: "29/01/2017", endDate: "15/02/2017")
-//       def relevantPost = post.properties.findAll { !['class', 'metaClass'].contains(it.key) }
-
-//       db.traveller_post.insert(source:"delhi", destination: "Mathura", startDate: "29/01/2017", endDate: "15/02/2017")
    }
 
 
@@ -147,28 +135,15 @@ class MongoService {
 
 
     def saveUserLatLong(def postParams){
-//        initiateMongo()
 
+        //Connect to Mongo DB
         setupMongo()
+
+        //Save location in db
         Double[] location = [Double.parseDouble(postParams.longitude + ""), Double.parseDouble(postParams.latitude + "")];
         final BasicDBObject loc = new BasicDBObject("user_id", Long.parseLong(postParams.userId + ""));
         loc.put("location", location);
         getCollection().update(new BasicDBObject("user_id", Long.parseLong(postParams.userId + "")), loc, true, false);
-
-        /*
-        UserLocation userLocation = new UserLocation()
-        userLocation.userId = Long.parseLong(postParams.userId + "")
-
-        userLocation.location = [
-                Double.parseDouble(postParams.longitude + ""),
-                Double.parseDouble(postParams.latitude + "")
-        ]
-        datastore.save(userLocation)
-        */
-
-
-
-
     }
 
 
@@ -197,13 +172,8 @@ class MongoService {
 
         int count = 0;
         for (final DBObject venue : collection.find(query).toArray()) {
-            //System.out.println("---- near venue: " + venue.get("name"));
-            count++;
+           count++;
         }
-//
-//        DBObject obj = db.getCollection("restaurants").findOne(query)
-//        DBCursor cursor = collection.find(query);
-//        cursor.size()
         System.out.println("obj count"+ count)
 
     }
@@ -214,17 +184,14 @@ class MongoService {
         DBObject dbObject = new BasicDBObject([type: "Point", coordinates:[longLoc, latLoc]])
         DBObject userLocation = new BasicDBObject([userId:userId, latitude:latLoc, longitude:longLoc, location:dbObject])
         collection.insert(userLocation)
-
-//        final BasicDBObject place = new BasicDBObject();
-//        place.put("userId", userId);
-//        place.put("latitude", latLoc);
-//        place.put("longitude", longLoc);
-//        place.put("location", location);
-//        place.put("")
-//        collection.insert(place);
     }
 
 
+    /**
+     * This method returns the list of users who are within 5km radius of a given location
+     * @param location
+     * @return
+     */
     public  List<Long> nearSphereWIthMaxDistance(Double[] location) {
         setupMongo()
         List<Long> nearUsers = new ArrayList<Long>()
@@ -250,6 +217,15 @@ class MongoService {
 
     }
 
+    /**
+     * This methos stores notification details for a post in db
+     * @param postId
+     * @param postParams
+     * @param notifiedUsersList
+     * @param notificationType
+     * @param postType
+     * @return
+     */
     def storeNotification(String postId, def postParams, List<Long> notifiedUsersList, Constants.NotificationType notificationType, Constants.PostType postType){
         notifiedUsersList?.each{ notifiedUserId ->
             Notification notification = new Notification()
@@ -265,7 +241,12 @@ class MongoService {
     }
 
 
-
+    /**
+     * This method generates the list of users who will get the notification for a given post
+     * @param postId
+     * @param postParams
+     * @param postType
+     */
     void sendNotification(String postId, def postParams, Constants.PostType postType){
         log.info("sendNotification")
         List<Long> notifiedUsersId = new ArrayList<Long>()
@@ -281,17 +262,24 @@ class MongoService {
         List<UserProfile> residentUsers = UserProfile.findAllByCityOrState(postParams.destination, postParams.destination)
         List<Long> residentUserId = residentUsers.user.id
 
+        //Nearby users
         if(nearUsers != null && nearUsers?.size() > 0) {
             storeNotification(postId, postParams, nearUsers, Constants.NotificationType.NEARBY, postType)
 
         }
+
+        //Friends
         if(friendUserIdList != null && friendUserIdList.size() > 0) {
             storeNotification(postId, postParams, friendUserIdList, Constants.NotificationType.FRIENDS, postType)
 
         }
+
+        //USers going to the same place
         if(sameDestinationUserList != null && sameDestinationUserList.size() > 0){
             storeNotification(postId, postParams, sameDestinationUserList, Constants.NotificationType.SAME_DESTINATION, postType)
         }
+
+        //Users staying at the destination
         if(residentUserId != null && residentUserId.size() > 0){
             storeNotification(postId, postParams, residentUserId, Constants.NotificationType.NATIVE, postType)
         }
@@ -304,13 +292,17 @@ class MongoService {
         return orderedUserNotifications.take(Constants.TOP_NOTIFICATIONS_COUNT)
     }
 
+    /**
+     * This method returns the list of traveller feeds from a given offset
+     * @param offset
+     * @return
+     */
     def getLatestTravellerFeeds(Integer offset){
         if(offset == null){
             offset = 0
         }
         def travellerPost = TravellerPost.createCriteria()
         def topPosts = travellerPost.list(max:Constants.TOP_POST_COUNT, offset:offset){
-//            maxResults(Constants.TOP_POST_COUNT)
             order("postTime","desc")
         }
 
@@ -331,21 +323,26 @@ class MongoService {
     }
 
 
-    Comment saveComment(String commentId, String postId, def postParams){
+    Comment saveComment(String commentId, def params, def postParams){
         log.info("comment text : " + postParams.commentText)
         log.info("postedBy : " + postParams.userId)
+        String postId = params.postId
+        String postType = params.postType
         Comment comment = null
         if(commentId != null) {
             comment = Comment.findById(new ObjectId(commentId))
         } else {
             comment = new Comment()
             comment.postId = postId
+            comment.postType = postType
             comment.postDate = System.currentTimeMillis()
+
         }
         if(comment != null) {
             comment.commentText = postParams.commentText
             comment.postedById = postParams.postedById != null ? Long.parseLong(postParams.postedById + "") : null;
             comment.parentCommentId = postParams.parentCommentId
+            comment.updatedOn = System.currentTimeMillis().toString()
             return comment.save(failOnError: true)
         } else {
             return null
@@ -372,8 +369,15 @@ class MongoService {
 
 
 
-    List<Comment> getCommentListForPost(String postId){
-       return Comment.findAllByPostIdAndParentCommentIdIsNull(postId)
+    List<Comment> getCommentListForPost(def params){
+        String postId = params.postId
+        String postType = params.postType
+       return Comment.findAllByPostIdAndPostTypeAndParentCommentIdIsNull(postId, postType)
+    }
+
+
+    List<Comment> getRepliesForComment(String commentId){
+        return Comment.findAllByParentCommentId(commentId)
     }
 
 

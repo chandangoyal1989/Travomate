@@ -115,12 +115,16 @@ class UrlMappings {
 			action = [GET: "searchUser"]
 		}
 
-		"/api/comment/${postId}"(controller: "restAPI") {
+		"/api/comment/${postId}/${postType}"(controller: "restAPI") {
 			action = [POST: "addComment", GET: "getComments"]
 		}
 
 		"/api/comment/edit/${commentId}"(controller: "restAPI") {
 			action = [PUT : "editComment", DELETE: "deleteComment"]
+		}
+
+		"/api/reply/${commentId}"(controller: "restAPI") {
+			action = [GET : "getReplies"]
 		}
 
 		"/api/like/${objectId}"(controller: "restAPI") {
@@ -159,6 +163,10 @@ class UrlMappings {
 
 		"/api/tripreview/uploadPic/${userid}/${tripReviewId}/${title}/${picType}"(controller: "restAPI") {
 			action = [POST: "uploadTripReviewPic"]
+		}
+
+		"/api/testFCM"(controller: "restAPI") {
+			action = [POST: "testFCMNotifications"]
 		}
 
 		"/api/logout"(controller: "restAPI") {

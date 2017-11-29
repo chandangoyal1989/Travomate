@@ -10,6 +10,7 @@ import com.travomate.tool.TripReviewDTOMapper
 import com.travomate.tool.UserDTOMapper
 import com.travomate.tool.UserProfileDTOMapper
 import org.apache.commons.io.FileUtils
+import org.json.simple.JSONObject
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.commons.CommonsMultipartFile
 
@@ -96,7 +97,13 @@ class RestAPIService {
         userOTPAuthentication.save(flush: true, failOnError: true)
     }
 
-
+    /**
+     * Verifies the OTP sent by the user
+     * @param user
+     * @param inputOTP
+     * @param source
+     * @return
+     */
     Boolean checkIfUserOTPIsCorrect(User user, String inputOTP, String source) {
         Boolean isVerified = false
         UserOTP userOTPAuthentication = UserOTP.findByUserAndSource(user, source)
@@ -115,9 +122,18 @@ class RestAPIService {
         userOTPAuthentication.save(flush: true, failOnError: true)
     }
 
+    /**
+     * Updates OTP verification status in db
+     * @param user
+     * @param verifiedId
+     * @param source
+     * @return
+     */
     Boolean updateOTPVerificationStatus(User user, String verifiedId, String source) {
         log.info("updateMailVerificationStatus for user : " + user.contact)
         Boolean isVerified = true
+
+        //Mail OTP
         if (Constants.OTP_MAIL_SOURCE_KEY.equalsIgnoreCase(source)) {
             User userTemp = User.findByEmail(verifiedId)
             if (userTemp != null && userTemp.id != user.id) {
@@ -128,6 +144,7 @@ class RestAPIService {
                 user.save(flush: true, failOnError: true)
             }
         } else if (Constants.OTP_PHONE_SOURCE_KEY.equalsIgnoreCase(source)) {
+            //Phone OTP
             User userTemp = User.findByContact(verifiedId)
             if (userTemp != null && userTemp.id != user.id) {
                 isVerified = false
@@ -194,7 +211,7 @@ class RestAPIService {
         String response
         while ((response = reader.readLine()) != null)
         // print response
-            System.out.println(response)
+            log.info(response)
         // finally close connection
         reader.close()
 
@@ -211,51 +228,66 @@ class RestAPIService {
     }
 
 
+    /**
+     * This method saves image to filesystem and saved image;s location in db
+     * @param user
+     * @param picType
+     * @param photo
+     * @return
+     */
     public Boolean saveImage(User user, String picType, CommonsMultipartFile photo) {
         String picName = photo.originalFilename
         String imageBaseDir = Constants.IMAGE_BASE_DIR
         String imageLoc = null
-        UserProfile userProfile = UserProfile.findByUser(user)
-        if (Constants.PROFILE_TYPE_IMAGE.equalsIgnoreCase(picType)) {
-            imageLoc = imageBaseDir + user.id + Constants.FILE_PATH_DELIMITER + Constants.PROFILE_IMAGE_DIR + Constants.FILE_PATH_DELIMITER
-            userProfile.profileImageLoc = imageLoc + picName
-        } else if (Constants.COVER_PIC_TYPE_IMAGE.equalsIgnoreCase(picType)) {
-            imageLoc = imageBaseDir + user.id + Constants.FILE_PATH_DELIMITER + Constants.PROFILE_COVER_IMAGE_DIR + Constants.FILE_PATH_DELIMITER
-            userProfile.coverImageLoc = imageLoc + picName
-        } else if (Constants.ID_PROOF_TYPE_IMAGE.equalsIgnoreCase(picType)) {
-            imageLoc = imageBaseDir + user.id + Constants.FILE_PATH_DELIMITER + Constants.ID_PROOF_IMAGE_DIR + Constants.FILE_PATH_DELIMITER
-            userProfile.idProofLoc = imageLoc + picName
-        } else {
-            return false
-        }
-        log.info("user id : " + user.id + " pictype : " + picType + " picName : " + picName + " imageloc : " + imageLoc)
-        userProfile.save(flush: true, failOnError: true)
+        try {
+            UserProfile userProfile = UserProfile.findByUser(user)
+            if (Constants.PROFILE_TYPE_IMAGE.equalsIgnoreCase(picType)) {
+                imageLoc = imageBaseDir + user.id + Constants.FILE_PATH_DELIMITER + Constants.PROFILE_IMAGE_DIR + Constants.FILE_PATH_DELIMITER
+                userProfile.profileImageLoc = imageLoc + picName
+            } else if (Constants.COVER_PIC_TYPE_IMAGE.equalsIgnoreCase(picType)) {
+                imageLoc = imageBaseDir + user.id + Constants.FILE_PATH_DELIMITER + Constants.PROFILE_COVER_IMAGE_DIR + Constants.FILE_PATH_DELIMITER
+                userProfile.coverImageLoc = imageLoc + picName
+            } else if (Constants.ID_PROOF_TYPE_IMAGE.equalsIgnoreCase(picType)) {
+                imageLoc = imageBaseDir + user.id + Constants.FILE_PATH_DELIMITER + Constants.ID_PROOF_IMAGE_DIR + Constants.FILE_PATH_DELIMITER
+                userProfile.idProofLoc = imageLoc + picName
+            } else {
+                return false
+            }
+            log.info("user id : " + user.id + " pictype : " + picType + " picName : " + picName + " imageloc : " + imageLoc)
+            userProfile.save(flush: true, failOnError: true)
 
-        //save image to user_profile_image table
-        UserProfileImage userProfileImage = UserProfileImage.findByUserAndImageTypeAndInUse(user, picType, true)
-        if (userProfileImage != null) {
-            userProfileImage.inUse = false
+            //save image to user_profile_image table
+            UserProfileImage userProfileImage = UserProfileImage.findByUserAndImageTypeAndInUse(user, picType, true)
+            if (userProfileImage != null) {
+                userProfileImage.inUse = false
+                userProfileImage.save(failOnError: true, flush: true)
+
+            }
+            userProfileImage = new UserProfileImage()
+            userProfileImage.imageLoc = imageLoc
+            userProfileImage.inUse = true
+            userProfileImage.user = user
+            userProfileImage.imageType = picType
             userProfileImage.save(failOnError: true, flush: true)
 
+
+            saveImageFileToSystem(imageLoc, photo)
+        }catch(Exception e){
+            log.error("Error while saving the image", e);
+            reutrn false
         }
-        userProfileImage = new UserProfileImage()
-        userProfileImage.imageLoc = imageLoc
-        userProfileImage.inUse = true
-        userProfileImage.user = user
-        userProfileImage.imageType = picType
-        userProfileImage.save(failOnError: true, flush: true)
-
-
-        saveImageFileToSystem(imageLoc, photo)
 
         return true
     }
 
-
+    /**
+     * This method creates/edit a user's profile
+     * @param user
+     * @param postParams
+     */
     public void createOrModifyProfile(User user, def postParams) {
         UserProfile userProfile = UserProfile.findByUser(user)
-        System.out.println("createOrModifyProfile post params : " + postParams)
-        System.out.println("languages : " + postParams.languages?.join(","))
+        log.info("createOrModifyProfile post params : " + postParams)
         if (userProfile != null) {
             userProfile.name = postParams.name ?: userProfile.name
             userProfile.nationality = postParams.nationality ?: userProfile.nationality
@@ -287,14 +319,19 @@ class RestAPIService {
     }
 
 
+    /**
+     * This method checks if a friend request is already sent by the user
+     * @param fromUserId
+     * @param toUserId
+     * @return
+     */
     public Boolean checkIfFriendRequestAlreadySent(Long fromUserId, Long toUserId) {
         Boolean isFriendRequestSent = false;
         User sender = User.get(fromUserId)
         User recipient = User.get(toUserId)
-        log.info("sender "+sender + " recipeitn "+recipient)
+        log.info("sender "+sender + " recipient "+recipient)
         UserFriendRequest userFriendRequest1 = UserFriendRequest.findByRecipientAndSender(sender, recipient);
         UserFriendRequest userFriendRequest = UserFriendRequest.findByRecipientAndSender(recipient, sender);
-//        log.info(userFriendRequest1 + " " + userFriendRequest)
         if(userFriendRequest != null || userFriendRequest1 != null){
             isFriendRequestSent = true
         }
@@ -303,6 +340,12 @@ class RestAPIService {
     }
 
 
+    /**
+     * This method checks if a user is already a friend of another user
+     * @param fromUserId
+     * @param toUserId
+     * @return
+     */
     public Boolean checkIfSenderIsAlreadyAFriend(Long fromUserId, Long toUserId){
         Boolean isFriend = false
         User sender = User.get(fromUserId)
@@ -317,7 +360,12 @@ class RestAPIService {
         return isFriend
     }
 
-
+    /**
+     * Saves friend request sent by a user to another user
+     * @param fromUserId
+     * @param toUserId
+     * @return
+     */
     public Boolean saveFriendRequest(Long fromUserId, Long toUserId) {
         Boolean isSaved = true
         User recipient = User.get(toUserId)
@@ -337,7 +385,11 @@ class RestAPIService {
 
     }
 
-
+    /**
+     * Deletes friend request
+     * @param fromUserId
+     * @param toUserId
+     */
     public void deleteFriendRequest(Long fromUserId, Long toUserId) {
         User recipient = User.get(toUserId)
         User sender = User.get(fromUserId)
@@ -350,60 +402,83 @@ class RestAPIService {
         }
     }
 
-
+    /**
+     * Get the list of friend requests for a user
+     * @param profileUserId
+     * @param requestType
+     * @return
+     */
     public List<UserFriendRequest> getFriendRequests(Long profileUserId, String requestType) {
-        log.info("user profile : " + User.get(profileUserId))
+        //Friend requests received by the given user
         if(Constants.RECIPIENT_FRIEND_REQUEST_API_PATH_STR.equalsIgnoreCase(requestType)) {
             return UserFriendRequest.findAllByRecipient(User.get(profileUserId))
         } else {
+            //Friend requests sent by the given user
             return UserFriendRequest.findAllBySender(User.get(profileUserId))
         }
 
     }
 
-
+    /**
+     * Creates friendship relationship between 2 users
+     * @param fromUserId
+     * @param toUserId
+     * @return
+     */
     public Boolean saveFriendship(Long fromUserId, Long toUserId) {
         Boolean isSaved = false
         User recipient = getUser(toUserId)
         User sender = getUser(fromUserId)
         System.out.println("recipient " + recipient + " sender " + sender)
-        if (recipient != null && sender != null) {
-            List<UserFriends> existingFriendList = UserFriends.findAllByProfileUserInListAndFriendInList([recipient, sender],[recipient, sender])
-            log.info("existingFriendList "+existingFriendList)
-            if(existingFriendList == null || existingFriendList?.size() == 0) {
-                UserFriends friendship1 = new UserFriends()
-                friendship1.profileUser = recipient
-                friendship1.friend = sender
-                friendship1.friendshipDate = new Date()
+        try {
+            if (recipient != null && sender != null) {
 
-                UserFriends friendship2 = new UserFriends()
-                friendship2.profileUser = sender
-                friendship2.friend = recipient
-                friendship2.friendshipDate = new Date()
-                boolean valid = friendship1.validate()
-                System.out.println("valid1 : " + valid)
-                valid = friendship2.validate()
-                System.out.println("valid2 : " + valid)
-                friendship1.save(flush: true, failOnError: true)
-                friendship2.save(flush: true, failOnError: true)
+                //Add friendship only if the 2 users are already not friends of each other
+                List<UserFriends> existingFriendList = UserFriends.findAllByProfileUserInListAndFriendInList([recipient, sender], [recipient, sender])
+                log.info("existingFriendList " + existingFriendList)
 
-                //delete friend request
-                deleteFriendRequest(fromUserId, toUserId)
-                isSaved = true
+                if (existingFriendList == null || existingFriendList?.size() == 0) {
+                    UserFriends friendship1 = new UserFriends()
+                    friendship1.profileUser = recipient
+                    friendship1.friend = sender
+                    friendship1.friendshipDate = new Date()
+
+                    UserFriends friendship2 = new UserFriends()
+                    friendship2.profileUser = sender
+                    friendship2.friend = recipient
+                    friendship2.friendshipDate = new Date()
+                    boolean valid = friendship1.validate()
+                    System.out.println("valid1 : " + valid)
+                    valid = friendship2.validate()
+                    System.out.println("valid2 : " + valid)
+                    friendship1.save(flush: true, failOnError: true)
+                    friendship2.save(flush: true, failOnError: true)
+
+                    //delete friend request
+                    deleteFriendRequest(fromUserId, toUserId)
+                    isSaved = true
+                }
+
             }
-
+        }catch(Exception e){
+            log.error("Failed to save friendship between users with id " + fromUserId + " and  " + toUserId,e)
         }
 
         return isSaved
     }
 
-
+    /**
+     * This method removes a user from friend list of another user
+     * @param profileUserId
+     * @param toBeDeletedUserId
+     * @return
+     */
     public Boolean deleteFriend(Long profileUserId, Long toBeDeletedUserId) {
         Boolean isDeleted = true
         User profileUser = User.get(profileUserId)
         User toBeDeletedUser = User.get(toBeDeletedUserId)
 
-
+        //Delete friendship from both ends
         if (profileUser != null && toBeDeletedUser != null) {
             UserFriends friendship1 = UserFriends.findByProfileUserAndFriend(profileUser, toBeDeletedUser)
             friendship1.delete()
@@ -417,7 +492,11 @@ class RestAPIService {
         return isDeleted
     }
 
-
+    /**
+     * Returns the list of friends of a user
+     * @param userFriends
+     * @return
+     */
     public Expando constructUserFriendList(List<UserFriends> userFriends) {
         Expando userFriendsExpando = new Expando()
         List<UserProfileDTO> friendList = new ArrayList<UserProfileDTO>()
@@ -431,7 +510,10 @@ class RestAPIService {
         return userFriendsExpando
     }
 
-
+    /**
+     * Delete a user's profile
+     * @param user
+     */
     public void deleteProfile(User user) {
         UserProfile userProfile = UserProfile.findByUser(user)
         System.out.println("delete profile user id  : " + user.id)
@@ -440,12 +522,22 @@ class RestAPIService {
         userProfile.delete()
     }
 
-
+    /**
+     * Change password
+     * @param user
+     * @param newPsssword
+     */
     public void changePassword(User user, String newPsssword) {
         user.password = newPsssword
         user.save(flush: true, failOnError: true)
     }
 
+
+    /**
+     * Returns the list of trip reviews posted by a user
+     * @param userId
+     * @return
+     */
     public List<Expando> getTripReviews(Long userId) {
         List<Expando> tripReviewExpandoList = new ArrayList<Expando>()
         Expando tripReviewExpando = null
@@ -466,10 +558,16 @@ class RestAPIService {
             tripReviewExpando.pics = tripReviewAlbumDTOArray
             tripReviewExpandoList.add(tripReviewExpando.properties)
          }
-//        List<TripReviewDTO> tripReviewDTOList = tripReviewDTOMapper.mapTripReviewListtoTripReviewDTO(reviewList)
         return tripReviewExpandoList
     }
 
+    /**
+     * Check Duplicate trip review name
+     * @param tripReviewTitle
+     * @param user
+     * @param tripReviewId
+     * @return
+     */
     public Boolean checkIfTripReviewWithSameNameExists(String tripReviewTitle, User user, Long tripReviewId){
         TripReview tripReview = user != null ? TripReview.findByTitleAndUser(tripReviewTitle, user) : TripReview.findByTitle(tripReviewTitle)
         log.info("checkIfTripReviewWithSameNameExists tripReviewID : " + tripReviewId + " db tripReview Id : " + tripReview?.id)
@@ -483,42 +581,57 @@ class RestAPIService {
         return false
     }
 
+    /**
+     * Saves trip review in db
+     * @param params
+     * @param userId
+     * @param tripReviewId
+     * @return
+     */
     public TripReview saveTripReview(def params, Long userId, Long tripReviewId) {
         TripReview tripReview = null
         User user = (userId != null) ? User.get(userId) : null
-        log.info("saveTripReview : " + user)
-        Boolean isDuplicate = checkIfTripReviewWithSameNameExists(params.title, user, tripReviewId)
-        log.info("isDuplicate trip review : " + isDuplicate)
-        if(isDuplicate){
-            log.info("Duplicate trip review title")
-        } else {
-
-            if (tripReviewId != 0) {
-                tripReview = TripReview.get(tripReviewId)
+        try {
+            Boolean isDuplicate = checkIfTripReviewWithSameNameExists(params.title, user, tripReviewId)
+            log.info("isDuplicate trip review : " + isDuplicate)
+            if (isDuplicate) {
+                log.info("Duplicate trip review title")
             } else {
-                tripReview = new TripReview()
+                //Create a new trip review if it doesn't exist, otherwise get the existing review
+                if (tripReviewId != 0) {
+                    tripReview = TripReview.get(tripReviewId)
+                } else {
+                    tripReview = new TripReview()
+                }
+                if (userId != null) {
+                    tripReview.user = User.get(userId)
+                }
+                log.info("Trip review : " + tripReview)
+                tripReview.routeToTake = params.routeToTake
+                tripReview.timeToVisit = params.timeToVisit
+                tripReview.tripDescription = params.tripDescription
+                tripReview.title = params.title
+                tripReview = tripReview.save(flush: true, failOnError: true)
+                log.info("saved Trip review : " + tripReview.title)
             }
-            if (userId != null) {
-                tripReview.user = User.get(userId)
-            }
-            log.info("Trip review : " + tripReview)
-            tripReview.routeToTake = params.routeToTake
-            tripReview.timeToVisit = params.timeToVisit
-            tripReview.tripDescription = params.tripDescription
-            tripReview.title = params.title
-            tripReview = tripReview.save(flush: true, failOnError: true)
-            log.info("saved Trip review : " + tripReview.title)
+        }catch(Exception e){
+            log.error("Failed to save trip review for userId " + userId,e)
         }
         return tripReview
     }
 
 
+    /**
+     * Deletes the trip review and all related information
+     * @param tripReviewId
+     */
     public void deleteTripReview(Long tripReviewId){
         TripReview toBeDeleted = TripReview.get(tripReviewId)
 
         //Delete related tripreview album and cover pic
         deleteAllTripReviewImages(toBeDeleted)
 
+        //Delete trip review
         toBeDeleted.delete();
     }
 
@@ -533,7 +646,10 @@ class RestAPIService {
         return tripReview
     }
 
-
+    /**
+     * Deletes all images of a trip review
+     * @param tripReview
+     */
     public void deleteAllTripReviewImages(TripReview tripReview){
         List<TripReviewAlbum> tripReviewAlbumList = TripReviewAlbum.findAllByTripReview(tripReview);
         TripReviewAlbum.deleteAll(tripReviewAlbumList)
@@ -541,47 +657,64 @@ class RestAPIService {
         FileUtils.deleteDirectory(new File(toBeDeletedDir));
     }
 
-
+    /**
+     * Saves a trip review image to the file system and updates the location in db
+     * @param user
+     * @param picType
+     * @param photo
+     * @param tripReviewId
+     * @param tripReviewTitle
+     * @return
+     */
     public TripReviewAlbum saveTripReviewImage(User user, String picType, CommonsMultipartFile photo, Long tripReviewId, String tripReviewTitle) {
         String picName = photo.originalFilename
         String imageBaseDir = Constants.IMAGE_BASE_DIR
         String imageLoc = null
         TripReview tripReview = null
-        if(tripReviewId == 0){
-            Boolean isDuplicate = checkIfTripReviewWithSameNameExists(tripReviewTitle, user, tripReviewId)
-            log.info("isDuplicate trip review : " + isDuplicate)
-            if(isDuplicate){
-                return null
-            }
-            tripReview = new TripReview()
-            tripReview.user = user
-            tripReview.title = tripReviewTitle
-            tripReview = tripReview.save(failOnError: true)
-        } else {
-            tripReview = TripReview.get(tripReviewId)
-        }
-
         TripReviewAlbum tripReviewAlbum = new TripReviewAlbum();
-        tripReviewAlbum.tripReview = tripReview
-        String todaysDate = new SimpleDateFormat("dd-MMM-yyyy").format(new Date());
-        String tripReviewDir = tripReview.title + "_" + tripReview.id;
-        if (Constants.TRIP_REVIEW_COVER_IMAGE.equalsIgnoreCase(picType)) {
-            TripReviewAlbum currentCoverPic = TripReviewAlbum.findByTripReviewAndIsCover(tripReview, true);
-            if(currentCoverPic != null){
-                currentCoverPic.isCover = false
-                currentCoverPic.save(flush:true, failOnError: true)
-            }
-            imageLoc = imageBaseDir + user.id + Constants.FILE_PATH_DELIMITER + Constants.TRIP_REVIEW_IMAGE_DIR + Constants.FILE_PATH_DELIMITER + tripReviewDir + Constants.FILE_PATH_DELIMITER + Constants.TRIP_REVIEW_COVER_PIC_DIR + Constants.FILE_PATH_DELIMITER
-            tripReviewAlbum.isCover = true
-        } else if (Constants.TRIP_REVIEW_ALBUM.equalsIgnoreCase(picType)) {
-            imageLoc = imageBaseDir + user.id + Constants.FILE_PATH_DELIMITER  + Constants.TRIP_REVIEW_IMAGE_DIR + Constants.FILE_PATH_DELIMITER + tripReviewDir + Constants.FILE_PATH_DELIMITER + Constants.TRIP_REVIEW_ALBUM_DIR + Constants.FILE_PATH_DELIMITER
-            tripReviewAlbum.isCover = false
-        }
-        tripReviewAlbum.imageLoc = imageLoc + picName
-        log.info("user id : " + user.id + " pictype : " + picType + " picName : " + picName + " imageloc : " + imageLoc)
-        tripReviewAlbum = tripReviewAlbum.save(flush: true, failOnError: true)
+        try {
+            if (tripReviewId == 0) {
 
-        saveImageFileToSystem(imageLoc, photo)
+                //Duplicate trip review name
+                Boolean isDuplicate = checkIfTripReviewWithSameNameExists(tripReviewTitle, user, tripReviewId)
+                log.info("isDuplicate trip review : " + isDuplicate)
+                if (isDuplicate) {
+                    return null
+                }
+                tripReview = new TripReview()
+                tripReview.user = user
+                tripReview.title = tripReviewTitle
+                tripReview = tripReview.save(failOnError: true)
+            } else {
+                tripReview = TripReview.get(tripReviewId)
+            }
+
+
+            tripReviewAlbum.tripReview = tripReview
+            String todaysDate = new SimpleDateFormat("dd-MMM-yyyy").format(new Date());
+            String tripReviewDir = tripReview.title + "_" + tripReview.id;
+
+            //Saves image pic/ profile pic at respective locations
+            if (Constants.TRIP_REVIEW_COVER_IMAGE.equalsIgnoreCase(picType)) {
+                TripReviewAlbum currentCoverPic = TripReviewAlbum.findByTripReviewAndIsCover(tripReview, true);
+                if (currentCoverPic != null) {
+                    currentCoverPic.isCover = false
+                    currentCoverPic.save(flush: true, failOnError: true)
+                }
+                imageLoc = imageBaseDir + user.id + Constants.FILE_PATH_DELIMITER + Constants.TRIP_REVIEW_IMAGE_DIR + Constants.FILE_PATH_DELIMITER + tripReviewDir + Constants.FILE_PATH_DELIMITER + Constants.TRIP_REVIEW_COVER_PIC_DIR + Constants.FILE_PATH_DELIMITER
+                tripReviewAlbum.isCover = true
+            } else if (Constants.TRIP_REVIEW_ALBUM.equalsIgnoreCase(picType)) {
+                imageLoc = imageBaseDir + user.id + Constants.FILE_PATH_DELIMITER + Constants.TRIP_REVIEW_IMAGE_DIR + Constants.FILE_PATH_DELIMITER + tripReviewDir + Constants.FILE_PATH_DELIMITER + Constants.TRIP_REVIEW_ALBUM_DIR + Constants.FILE_PATH_DELIMITER
+                tripReviewAlbum.isCover = false
+            }
+            tripReviewAlbum.imageLoc = imageLoc + picName
+            log.info("user id : " + user.id + " pictype : " + picType + " picName : " + picName + " imageloc : " + imageLoc)
+            tripReviewAlbum = tripReviewAlbum.save(flush: true, failOnError: true)
+
+            saveImageFileToSystem(imageLoc, photo)
+        }catch(Exception e){
+            log.error("Fail to save trip review image for user with id " + user.id, e);
+        }
 
         return tripReviewAlbum
 
@@ -602,5 +735,57 @@ class RestAPIService {
         }
 
 
+    }
+
+    /**
+     * FCM notification test method
+     * @param deviceToken
+     * @param notificationType
+     * @return
+     * @throws Exception
+     */
+    public String sendFCMNotification(String deviceToken, Constants.NotificationType notificationType) throws Exception{
+        String result = "";
+        URL url = new URL(Constants.API_URL_FCM);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
+        conn.setUseCaches(false);
+        conn.setDoInput(true);
+        conn.setDoOutput(true);
+
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Authorization", "key=AAAAe6XXv1U:APA91bFL3Nnl43m82X1K34UcTN-peDmbAqmTAh-oEqjRXJGZaQOi9YXtO5WaZ97jh6hvos0DcMxtczZ2m9vVYzPDdPCFrILsdbt4M7mysHrPCOio5lPeNch_FMfpxFo_vkKAEYpoLPSD");
+        conn.setRequestProperty("Content-Type", "application/json");
+
+        JSONObject json = new JSONObject();
+
+        json.put("to", deviceToken.trim());
+        JSONObject info = new JSONObject();
+        info.put("title", "Travomate"); // Notification title
+        info.put("body", "message body"); // Notification
+        // body
+        json.put("notification", info);
+        try {
+            OutputStreamWriter wr = new OutputStreamWriter(
+                    conn.getOutputStream());
+            wr.write(json.toString());
+            wr.flush();
+
+            BufferedReader br = new BufferedReader(new InputStreamReader(
+                    (conn.getInputStream())));
+
+            String output;
+            System.out.println("Output from Server .... \n");
+            while ((output = br.readLine()) != null) {
+                System.out.println(output);
+            }
+            result = "success";
+        } catch (Exception e) {
+            e.printStackTrace();
+            result = "failure";
+        }
+        System.out.println("FCM Notification is sent successfully");
+
+        return result;
     }
 }
