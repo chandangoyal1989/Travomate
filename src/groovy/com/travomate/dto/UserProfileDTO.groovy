@@ -18,4 +18,5 @@ class UserProfileDTO {
     String state
     String country
     String verificationStatus
+    Integer tripReviewCount
 }

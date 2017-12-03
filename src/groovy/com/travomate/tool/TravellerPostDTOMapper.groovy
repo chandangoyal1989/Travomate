@@ -16,11 +16,12 @@ class TravellerPostDTOMapper {
     UserProfileDTOMapper userProfileDTOMapper = UserProfileDTOMapper.getInstance()
 
     public TravellerPostDTO[] mapTravellerPostListToTravellerPostDTOArray(List<TravellerPost> travellerPostList) {
+        List<TravellerPostDTO> travellerPostDTOs = new ArrayList<TravellerPostDTO>()
         if (travellerPostList == null || travellerPostList?.isEmpty()) {
-            return null
+            return travellerPostDTOs
         }
 
-        List<TravellerPostDTO> travellerPostDTOs = new ArrayList<TravellerPostDTO>()
+
         for (TravellerPost travellerPost : travellerPostList) {
             travellerPostDTOs.add(mapTravellerPostToTravellerPostDTO(travellerPost))
         }

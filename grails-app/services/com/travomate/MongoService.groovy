@@ -415,6 +415,36 @@ class MongoService {
     }
 
 
+    public def filterFeedByCity(String cityName,String feedType, Integer offset){
+        def criteriaQuery = null;
+        def topPosts = null;
+        if(offset == null){
+            offset = 0
+        }
+        if(Constants.GUIDE_FEED_TYPE.equalsIgnoreCase(feedType)){
+            criteriaQuery = GuidePost.createCriteria()
+            topPosts = criteriaQuery.list(max:Constants.TOP_POST_COUNT, offset:offset){
+                ilike("place", "%${cityName}%")
+                order("postTime","desc")
+            }
+        } else if(Constants.TRAVELLER_FEED_TYPE.equalsIgnoreCase(feedType)){
+            criteriaQuery = TravellerPost.createCriteria()
+            topPosts = criteriaQuery.list(max:Constants.TOP_POST_COUNT, offset:offset){
+                or {
+                    ilike("source", "%${cityName}%")
+                    ilike("destination", "%${cityName}%")
+                }
+                order("postTime","desc")
+            }
+        }
+
+        return topPosts;
+    }
+
+
+
+
+
 }
 
 

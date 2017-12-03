@@ -754,7 +754,7 @@ class RestAPIService {
         conn.setDoOutput(true);
 
         conn.setRequestMethod("POST");
-        conn.setRequestProperty("Authorization", "key=AAAAe6XXv1U:APA91bFL3Nnl43m82X1K34UcTN-peDmbAqmTAh-oEqjRXJGZaQOi9YXtO5WaZ97jh6hvos0DcMxtczZ2m9vVYzPDdPCFrILsdbt4M7mysHrPCOio5lPeNch_FMfpxFo_vkKAEYpoLPSD");
+        conn.setRequestProperty("Authorization", "key=${Constants.AUTH_KEY_FCM}");
         conn.setRequestProperty("Content-Type", "application/json");
 
         JSONObject json = new JSONObject();

@@ -169,6 +169,10 @@ class UrlMappings {
 			action = [POST: "testFCMNotifications"]
 		}
 
+		"/api/searchFeed/${cityName}/${feedType}/${offset}" (controller: "restAPI") {
+			action = [GET: "searchFeed"]
+		}
+
 		"/api/logout"(controller: "restAPI") {
 			action = [GET: "logout"]
 		}

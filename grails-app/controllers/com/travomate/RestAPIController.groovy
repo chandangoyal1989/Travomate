@@ -920,6 +920,35 @@ class RestAPIController extends Rest{
     }
 
     /**
+     * API to a given filter feed by city name
+     */
+    def searchFeed(){
+        String cityName = params.cityName
+        String feedType = params.feedType
+        Integer offset = params.offset ? Integer.parseInt(params.offset) : 0
+        def filteredFeeds = mongoService.filterFeedByCity(cityName, feedType, offset)
+
+        //Send filtered traveller feed /guide feed based on the feedType param
+        if(Constants.GUIDE_FEED_TYPE.equalsIgnoreCase(feedType)) {
+            GuidePostDTO[] guidePostDTOs = guidePostDTOMapper.mapGuidePostListToGuidePostDTOArray(filteredFeeds)
+            Expando guideFeedResponse = new Expando()
+            guideFeedResponse.filteredFeed = guidePostDTOs
+            JSON results = guideFeedResponse.properties as JSON
+            success(results)
+        } else if(Constants.TRAVELLER_FEED_TYPE.equalsIgnoreCase(feedType)){
+            TravellerPostDTO[] travellerPostDTOs = travellerPostDTOMapper.mapTravellerPostListToTravellerPostDTOArray(filteredFeeds)
+            Expando travellerFeedResponse = new Expando()
+            travellerFeedResponse.filteredFeed = travellerPostDTOs
+            JSON results = travellerFeedResponse.properties as JSON
+            success(results)
+        } else {
+            error("Invalid feed type")
+        }
+
+
+    }
+
+    /**
      * Test API
      * @return
      */

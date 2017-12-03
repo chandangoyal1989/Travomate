@@ -1,6 +1,7 @@
 package com.travomate.tool
 
 import com.travomate.Constants
+import com.travomate.TripReview
 import com.travomate.UserProfile
 import com.travomate.dto.UserDTO
 import com.travomate.dto.UserProfileDTO
@@ -50,6 +51,7 @@ class UserProfileDTOMapper {
         userProfileDTO.idProofLoc = userProfile.idProofLoc?.replace(Constants.IMAGE_ROOT_DIR,"/")
         userProfileDTO.coverImageLoc = userProfile.coverImageLoc?.replace(Constants.IMAGE_ROOT_DIR,"/")
         userProfileDTO.profileImageLoc = userProfile.profileImageLoc?.replace(Constants.IMAGE_ROOT_DIR,"/")
+        userProfileDTO.tripReviewCount = TripReview.countByUser(userProfile.getUser())
 
 
         return userProfileDTO

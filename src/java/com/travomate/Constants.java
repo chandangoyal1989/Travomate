@@ -30,7 +30,7 @@ public class Constants {
     public static final String OTP_MAIL_SOURCE_KEY = "email";
     public static final String OTP_PHONE_SOURCE_KEY = "phone";
     public static final String SMS_AUTH_KEY = "136393AhWl0TxW1586fd9de";
-    public static final String SMS_SENDER_ID = "TMOTPI";//"GPSALT";//"ONESS-5432";
+    public static final String SMS_SENDER_ID = "TMOTPI";
     public static final Integer SMS_COUNTRY_ID = 91;
     public static final String SMS_URL = "http://api.msg91.com/api/sendhttp.php?";
 
@@ -49,6 +49,9 @@ public class Constants {
     public static final String SENDER_FRIEND_REQUEST_API_PATH_STR = "sender";
     public static final String TRIP_REVIEW_COVER_PIC_DIR = "cover_image";
     public static final String TRIP_REVIEW_ALBUM_DIR = "trip_review_album";
+
+    public static final String GUIDE_FEED_TYPE = "guide";
+    public static final String TRAVELLER_FEED_TYPE = "traveller";
 
 
     public final static String AUTH_KEY_FCM = "AIzaSyBh5nInaMcXvaOvbAOs9oNNfn1BsC9OfUA";

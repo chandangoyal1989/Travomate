@@ -16,11 +16,12 @@ class GuidePostDTOMapper {
     UserProfileDTOMapper userProfileDTOMapper = UserProfileDTOMapper.getInstance()
 
     public GuidePostDTO[] mapGuidePostListToGuidePostDTOArray(List<GuidePost> guidePostList) {
+        List<GuidePostDTO> guidePostDTOs = new ArrayList<GuidePostDTO>()
         if (guidePostList == null || guidePostList?.isEmpty()) {
-            return null
+            return guidePostDTOs
         }
 
-        List<GuidePostDTO> guidePostDTOs = new ArrayList<GuidePostDTO>()
+
         for (GuidePost guidePost : guidePostList) {
             guidePostDTOs.add(mapGuidePostToGuidePostDTO(guidePost))
         }
