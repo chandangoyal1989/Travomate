@@ -166,7 +166,7 @@ class UrlMappings {
 		}
 
 		"/api/testFCM"(controller: "restAPI") {
-			action = [POST: "testFCMNotifications"]
+			action = [GET: "testFCMNotifications"]
 		}
 
 		"/api/searchFeed/${cityName}/${feedType}/${offset}" (controller: "restAPI") {

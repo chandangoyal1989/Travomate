@@ -324,10 +324,9 @@ class MongoService {
 
 
     Comment saveComment(String commentId, def params, def postParams){
-        log.info("comment text : " + postParams.commentText)
-        log.info("postedBy : " + postParams.userId)
-        String postId = params.postId
-        String postType = params.postType
+        log.info("post params " + postParams)
+        String postId = params?.postId
+        String postType = params?.postType
         Comment comment = null
         if(commentId != null) {
             comment = Comment.findById(new ObjectId(commentId))
@@ -391,7 +390,7 @@ class MongoService {
         userLike.likedBy = Long.parseLong(postParams.likedById + "")
         userLike.likedOn = System.currentTimeMillis()
         userLike.likedObjectId = likedObjectId
-        userLike.likedObjectType = postParams.likedObjectType.toLowerCase()  //can be either "post" or "comment"
+        userLike.likedObjectType = postParams.likedObjectType.toLowerCase()  //can be  "guide" ,"traveller" ,"comment"
         return userLike.save(failOnError: true)
     }
 

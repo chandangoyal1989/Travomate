@@ -1,11 +1,8 @@
 package com.travomate.tool
 
-import com.travomate.GuidePost
-import com.travomate.User
-import com.travomate.UserProfile
+import com.travomate.*
 import com.travomate.dto.GuidePostDTO
 import com.travomate.dto.UserProfileDTO
-
 /**
  * Created by mchopra on 3/31/2017.
  */
@@ -52,6 +49,8 @@ class GuidePostDTOMapper {
         guidePostDTO.serviceEndTime = guidePost.serviceEndTime
         guidePostDTO.serviceDescription = guidePost.serviceDescription
         guidePostDTO.postDescription = guidePost.postDescription
+        guidePostDTO.likeCount = Like.countByLikedObjectIdAndLikedObjectType(guidePost.id.toString(), Constants.GUIDE_FEED_TYPE)
+        guidePostDTO.commentCount = Comment.countByPostIdAndPostTypeAndParentCommentIdIsNull(guidePost.id.toString(), Constants.GUIDE_FEED_TYPE)
 
         return guidePostDTO
 

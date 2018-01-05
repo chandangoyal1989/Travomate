@@ -14,5 +14,7 @@ class GuidePostDTO {
     String serviceToDate
     String serviceDescription
     String postDescription
+    Integer likeCount
+    Integer commentCount
 
 }

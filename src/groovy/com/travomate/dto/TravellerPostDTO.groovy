@@ -13,5 +13,7 @@ class TravellerPostDTO {
     String startTime
     String endTime
     String postDescription
+    Integer likeCount
+    Integer commentCount
 
 }

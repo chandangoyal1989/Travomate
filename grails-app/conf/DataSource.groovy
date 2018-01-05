@@ -52,15 +52,15 @@ environments {
 
 grails {
     mongo {
+//      host = "localhost"
+//        port = 27017
+//        databaseName = "travomate"
+
         host = "localhost"
         port = 27017
         databaseName = "travomate"
-
-//        host = "localhost"
-//        port = 27017
-//        databaseName = "travomate"
-//        username = "manisha"
-//        password = "root1234"
+        username = "manisha"
+        password = "root1234"
     }
 }
 

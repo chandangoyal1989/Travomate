@@ -1,5 +1,8 @@
 package com.travomate.tool
 
+import com.travomate.Comment
+import com.travomate.Constants
+import com.travomate.Like
 import com.travomate.TravellerPost
 import com.travomate.User
 import com.travomate.UserProfile
@@ -52,6 +55,8 @@ class TravellerPostDTOMapper {
         travellerPostDTO.startTime = travellerPost.startTime
         travellerPostDTO.endTime = travellerPost.endTime
         travellerPostDTO.postDescription = travellerPost.postDescription
+        travellerPostDTO.likeCount = Like.countByLikedObjectIdAndLikedObjectType(travellerPost.id.toString(), Constants.TRAVELLER_FEED_TYPE)
+        travellerPostDTO.commentCount = Comment.countByPostIdAndPostTypeAndParentCommentIdIsNull(travellerPost.id.toString(), Constants.TRAVELLER_FEED_TYPE)
 
         return travellerPostDTO
 
