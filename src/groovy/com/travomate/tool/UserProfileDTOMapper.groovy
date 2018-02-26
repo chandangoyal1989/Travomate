@@ -35,6 +35,7 @@ class UserProfileDTOMapper {
         userDTO.contact = userProfile.user.contact
         userDTO.gender = userProfile.user.gender
         userDTO.dateOfBirth = userProfile.user.dateOfBirth
+        userDTO.deviceId = userProfile.user.deviceId
 
         UserProfileDTO userProfileDTO = new UserProfileDTO()
         userProfileDTO.profileId = userProfile.id

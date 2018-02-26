@@ -33,6 +33,7 @@ class UserDTOMapper {
         userDTO.contact = user.contact
         userDTO.gender = user.gender
         userDTO.dateOfBirth = user.dateOfBirth
+        userDTO.deviceId = user.deviceId
 
         return userDTO
 

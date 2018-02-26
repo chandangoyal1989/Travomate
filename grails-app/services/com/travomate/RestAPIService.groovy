@@ -65,6 +65,13 @@ class RestAPIService {
         return UserProfileImage.findAllByUserAndImageType(user, imageType)
     }
 
+/*    public List<User> getAllFriendUserOfUser(List<UserFriends> userFriends){
+        ArrayList<User> userList = new ArrayList<User>();
+        for(UserFriends uf : userFriends){
+            userList.add(User.get(uf.))
+        }
+    }*/
+
     String getUserOTP(User user, String source) {
         String otp = null
         UserOTP userOTPAuthentication = UserOTP.findByUserAndSource(user, source)
@@ -278,6 +285,16 @@ class RestAPIService {
         }
 
         return true
+    }
+
+    /**
+     * update deviceId
+     * @param user
+     * @param deviceId
+     */
+    public void updateDeviceId(User user, String deviceId) {
+        user.deviceId = deviceId;
+        user.save(flush: true, failOnError: true)
     }
 
     /**
@@ -738,13 +755,13 @@ class RestAPIService {
     }
 
     /**
-     * FCM notification test method
+     * FCM notification method
      * @param deviceToken
      * @param notificationType
      * @return
      * @throws Exception
      */
-    public String sendFCMNotification(String deviceToken, Constants.NotificationType notificationType) throws Exception{
+    public String sendFCMNotification(ArrayList<String> deviceTokenArray, String message, Constants.NotificationType notificationType) throws Exception{
         String result = "";
         URL url = new URL(Constants.API_URL_FCM);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -757,34 +774,34 @@ class RestAPIService {
         conn.setRequestProperty("Authorization", "key=${Constants.AUTH_KEY_FCM}");
         conn.setRequestProperty("Content-Type", "application/json");
 
-        JSONObject json = new JSONObject();
+        for(String deviceToken: deviceTokenArray) {
+            JSONObject json = new JSONObject();
+            json.put("to", deviceToken.trim());
+            JSONObject info = new JSONObject();
+            info.put("title", "Travomate"); // Notification title
+            info.put("body", message); // Notification
+            // body
+            json.put("notification", info);
+            try {
+                OutputStreamWriter wr = new OutputStreamWriter(
+                        conn.getOutputStream());
+                wr.write(json.toString());
+                wr.flush();
 
-        json.put("to", deviceToken.trim());
-        JSONObject info = new JSONObject();
-        info.put("title", "Travomate"); // Notification title
-        info.put("body", "message body"); // Notification
-        // body
-        json.put("notification", info);
-        try {
-            OutputStreamWriter wr = new OutputStreamWriter(
-                    conn.getOutputStream());
-            wr.write(json.toString());
-            wr.flush();
+                BufferedReader br = new BufferedReader(new InputStreamReader(
+                        (conn.getInputStream())));
 
-            BufferedReader br = new BufferedReader(new InputStreamReader(
-                    (conn.getInputStream())));
-
-            String output;
-            System.out.println("Output from Server .... \n");
-            while ((output = br.readLine()) != null) {
-                System.out.println(output);
+                String output;
+                while ((output = br.readLine()) != null) {
+                    System.out.println(output);
+                }
+                result = "success";
+            } catch (Exception e) {
+                e.printStackTrace();
+                result = "failure";
             }
-            result = "success";
-        } catch (Exception e) {
-            e.printStackTrace();
-            result = "failure";
+            System.out.println("FCM Notification is sent successfully");
         }
-        System.out.println("FCM Notification is sent successfully");
 
         return result;
     }

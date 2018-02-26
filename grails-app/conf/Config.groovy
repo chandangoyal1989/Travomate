@@ -71,6 +71,7 @@ environments {
     }
 }
 
+//def logpath = "/home/chandan/IdeaProjects/travomate/logs/travomate.log"
 def logpath = "/usr/travomate/logs/travomate.log"
 grails.config.logPath= logpath
 

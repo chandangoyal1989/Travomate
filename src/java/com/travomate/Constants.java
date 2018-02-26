@@ -54,7 +54,7 @@ public class Constants {
     public static final String TRAVELLER_FEED_TYPE = "traveller";
 
 
-    public final static String AUTH_KEY_FCM = "AIzaSyBh5nInaMcXvaOvbAOs9oNNfn1BsC9OfUA";
+    public final static String AUTH_KEY_FCM = "AAAAe6XXv1U:APA91bFL3Nnl43m82X1K34UcTN-peDmbAqmTAh-oEqjRXJGZaQOi9YXtO5WaZ97jh6hvos0DcMxtczZ2m9vVYzPDdPCFrILsdbt4M7mysHrPCOio5lPeNch_FMfpxFo_vkKAEYpoLPSD";
     public final static String API_URL_FCM = "https://fcm.googleapis.com/fcm/send";
 
 

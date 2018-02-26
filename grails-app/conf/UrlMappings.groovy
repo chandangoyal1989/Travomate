@@ -16,6 +16,10 @@ class UrlMappings {
 			action = [POST: "login"]
 		}
 
+		"/api/device" (controller: "restAPI") {
+			action = [POST: "registerDevice"]
+		}
+
 		"/api/signup" (controller: "restAPI") {
 			action = [POST: "signup"]
 		}
@@ -167,6 +171,10 @@ class UrlMappings {
 
 		"/api/testFCM"(controller: "restAPI") {
 			action = [GET: "testFCMNotifications"]
+		}
+
+		"/api/testAPI"(controller: "restAPI") {
+			action = [POST: "testAPI"]
 		}
 
 		"/api/searchFeed/${cityName}/${feedType}/${offset}" (controller: "restAPI") {

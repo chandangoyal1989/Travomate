@@ -6,10 +6,12 @@ import com.mongodb.BasicDBObjectBuilder
 import com.mongodb.DB
 import com.mongodb.DBAddress
 import com.mongodb.DBCollection
+import com.mongodb.DBCursor
 import com.mongodb.DBObject
 import com.mongodb.Mongo
 import com.mongodb.MongoClient
 import org.bson.types.ObjectId
+import org.omg.PortableInterceptor.SYSTEM_EXCEPTION
 
 
 class MongoService {
@@ -50,6 +52,8 @@ class MongoService {
            tp.postDescription = postParams.postDescription
            tp.userId = Long.parseLong(postParams.userId + "")
            tp.postTime = System.currentTimeMillis()
+           Double[] location = [Double.parseDouble(postParams.longitude + ""), Double.parseDouble(postParams.latitude + "")];
+           tp.location = location
            tp = tp.save(failOnError: true)
 
        } else {
@@ -135,12 +139,12 @@ class MongoService {
 
 
     def saveUserLatLong(def postParams){
-
         //Connect to Mongo DB
         setupMongo()
 
         //Save location in db
         Double[] location = [Double.parseDouble(postParams.longitude + ""), Double.parseDouble(postParams.latitude + "")];
+        System.out.println("Save user location:"+location);
         final BasicDBObject loc = new BasicDBObject("user_id", Long.parseLong(postParams.userId + ""));
         loc.put("location", location);
         getCollection().update(new BasicDBObject("user_id", Long.parseLong(postParams.userId + "")), loc, true, false);
@@ -308,6 +312,11 @@ class MongoService {
 
         return topPosts
     }
+    
+    def getTravellerPostDestination(String destination){
+        List<TravellerPost> travellerPostList = TravellerPost.findAllByDestination(destination)
+       return travellerPostList
+    }
 
 
     def getTopGuideFeeds(Integer offset){
@@ -440,10 +449,18 @@ class MongoService {
         return topPosts;
     }
 
-
-
-
-
+    public Double[] getUserLocation(Long userId)
+    {
+        setupMongo();
+        BasicDBObject whereQuery = new BasicDBObject();
+        whereQuery.put("user_id", userId);
+        DBCursor cursor = getCollection().find(whereQuery);
+        cursor.hasNext()
+        BasicDBObject document = (BasicDBObject) cursor.next();
+        Double [] location = document.get("location");
+        System.out.println(location[0]+"  "+location[1]);
+        return location;
+    }
 }
 
 

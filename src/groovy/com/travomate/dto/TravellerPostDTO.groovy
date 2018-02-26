@@ -15,5 +15,6 @@ class TravellerPostDTO {
     String postDescription
     Integer likeCount
     Integer commentCount
+    Double[] location
 
 }
