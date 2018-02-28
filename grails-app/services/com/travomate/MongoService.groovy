@@ -36,7 +36,7 @@ class MongoService {
 
 
    ObjectId createOrModifyTravellerPost(def postParams, ObjectId postId){
-       System.out.println("in saveTravellerPost")
+       log.info("in saveTravellerPost")
        TravellerPost tp = null
        if(postId != null){
            tp = TravellerPost.get(postId)
@@ -287,7 +287,6 @@ class MongoService {
         if(residentUserId != null && residentUserId.size() > 0){
             storeNotification(postId, postParams, residentUserId, Constants.NotificationType.NATIVE, postType)
         }
-
     }
 
     def getUserNotifications(Long userId){
@@ -309,7 +308,6 @@ class MongoService {
         def topPosts = travellerPost.list(max:Constants.TOP_POST_COUNT, offset:offset){
             order("postTime","desc")
         }
-
         return topPosts
     }
     
@@ -317,7 +315,6 @@ class MongoService {
         List<TravellerPost> travellerPostList = TravellerPost.findAllByDestination(destination)
        return travellerPostList
     }
-
 
     def getTopGuideFeeds(Integer offset){
         if(offset == null){
@@ -327,10 +324,8 @@ class MongoService {
         def topPosts = guidePost.list(max:Constants.TOP_POST_COUNT, offset:offset){
             order("postTime","desc")
         }
-
         return topPosts
     }
-
 
     Comment saveComment(String commentId, def params, def postParams){
         log.info("post params " + postParams)
@@ -357,13 +352,11 @@ class MongoService {
         }
     }
 
-
     void deleteComment(String commentId){
         Comment comment = Comment.findById(new ObjectId(commentId))
         if(comment != null){
             comment.delete()
         }
-
     }
 
 
@@ -372,10 +365,7 @@ class MongoService {
         if(like != null){
             like.delete()
         }
-
     }
-
-
 
     List<Comment> getCommentListForPost(def params){
         String postId = params.postId
@@ -445,12 +435,12 @@ class MongoService {
                 order("postTime","desc")
             }
         }
-
         return topPosts;
     }
 
     public Double[] getUserLocation(Long userId)
     {
+        log.info("getting user information.")
         setupMongo();
         BasicDBObject whereQuery = new BasicDBObject();
         whereQuery.put("user_id", userId);
@@ -458,7 +448,7 @@ class MongoService {
         cursor.hasNext()
         BasicDBObject document = (BasicDBObject) cursor.next();
         Double [] location = document.get("location");
-        System.out.println(location[0]+"  "+location[1]);
+        log.info("User Location:"+location[0]+"  "+location[1]);
         return location;
     }
 }

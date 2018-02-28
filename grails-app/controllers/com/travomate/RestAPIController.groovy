@@ -74,8 +74,9 @@ class RestAPIController extends Rest {
      * @return
      */
     def registerDevice() {
+        log.info("Storing device token information");
         def postParams = JSON.parse(request.JSON.toString());
-        System.out.print("Devive token:" + postParams.deviceId);
+        log.info("Devive token:" + postParams.deviceId);
         Long userId = postParams.userId != null ? Long.parseLong(postParams.userId) : null
         User user = User.get(userId);
         if (userId != null) {
@@ -127,7 +128,6 @@ class RestAPIController extends Rest {
                 e.printStackTrace()
                 error("Unable to send the message")
             }
-
         } else {
             notFound("user not found")
         }
@@ -182,9 +182,7 @@ class RestAPIController extends Rest {
         User user = restAPIService.getUser(userid)
         if (user != null) {
             String otp = restAPIService.getUserOTP(user, Constants.OTP_MAIL_SOURCE_KEY)
-
             log.info("OTP for user : " + userid + " is " + otp)
-
             //Send A/c verification mail using Grails Plugin
             try {
                 mailService.sendMail {
@@ -201,8 +199,6 @@ class RestAPIController extends Rest {
                 mailException.printStackTrace()
                 error("Due to some server issue, unable to send the mail")
             }
-
-
         } else {
             notFound("User does not exist")
         }
@@ -226,7 +222,6 @@ class RestAPIController extends Rest {
             } else {
                 error("Invalid pic type")
             }
-
         } else {
             notFound("User does not exist")
         }
@@ -449,16 +444,19 @@ class RestAPIController extends Rest {
     def postTravellerFeed() {
         log.info(" in post feed")
         def postParams = JSON.parse(request.JSON.toString())
-        System.out.println("Post travellor Data:" + postParams);
+        log.info("Post travellor Data:" + postParams);
         ObjectId postId = mongoService.saveTravellerPost(postParams)
         Expando resultExpando = new Expando()
         resultExpando.postId = postId.toString()
         JSON results = resultExpando.properties as JSON
-        System.out.println("Post Traveller Result:" + results);
+        log.info("Post Traveller Result:" + results);
         Double[] location = mongoService.getUserLocation(Long.parseLong(postParams.userId + ""));
-        success(results, "Traveller Post saved")
+        success(results, "Traveller Post saved");
+        log.info("Calling Push notification for NearBy Traveller and guide");
         sendPushNotificationByNearByTravellerOrGuide(Long.parseLong(postParams.userId + ""), location);
+        log.info("Calling Push notification to friends");
         sendPushNotificationToFriends(Long.parseLong(postParams.userId + ""));
+        log.info("Calling Push notification for same destination people.");
         sendPushNotificationForSameDestinationUser(Long.parseLong(postParams.userId + ""),postParams.destination);
     }
 

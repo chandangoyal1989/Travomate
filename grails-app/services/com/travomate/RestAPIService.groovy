@@ -206,7 +206,7 @@ class RestAPIService {
         // final string
         mainUrl = sbPostData.toString()
 
-        System.out.println("sms url : " + mainUrl)
+        log.info("sms url : " + mainUrl)
 
         // prepare connection
         myURL = new URL(mainUrl)
@@ -446,7 +446,7 @@ class RestAPIService {
         Boolean isSaved = false
         User recipient = getUser(toUserId)
         User sender = getUser(fromUserId)
-        System.out.println("recipient " + recipient + " sender " + sender)
+        log.info("recipient " + recipient + " sender " + sender)
         try {
             if (recipient != null && sender != null) {
 
@@ -533,7 +533,7 @@ class RestAPIService {
      */
     public void deleteProfile(User user) {
         UserProfile userProfile = UserProfile.findByUser(user)
-        System.out.println("delete profile user id  : " + user.id)
+        log.info("delete profile user id  : " + user.id)
         UserFriends userFriends = UserFriends.findByProfileUser(user)
         userFriends.delete()
         userProfile.delete()
@@ -793,16 +793,15 @@ class RestAPIService {
 
                 String output;
                 while ((output = br.readLine()) != null) {
-                    System.out.println(output);
+                    log.info("FCM Output:",output);
                 }
                 result = "success";
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error(e.getMessage());
                 result = "failure";
             }
-            System.out.println("FCM Notification is sent successfully");
+            log.info("FCM Notification is sent successfully");
         }
-
         return result;
     }
 }
