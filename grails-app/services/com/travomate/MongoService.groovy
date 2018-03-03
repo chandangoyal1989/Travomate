@@ -10,6 +10,7 @@ import com.mongodb.DBCursor
 import com.mongodb.DBObject
 import com.mongodb.Mongo
 import com.mongodb.MongoClient
+import grails.converters.JSON
 import org.bson.types.ObjectId
 import org.omg.PortableInterceptor.SYSTEM_EXCEPTION
 
@@ -314,6 +315,36 @@ class MongoService {
     def getTravellerPostDestination(String destination){
         List<TravellerPost> travellerPostList = TravellerPost.findAllByDestination(destination)
        return travellerPostList
+    }
+
+    def getUserIdFromPostId(String postId){
+        User user;
+        TravellerPost travellerPost = TravellerPost.findById(postId)
+        if(travellerPost.userId!=null) {
+            user = User.get(travellerPost.userId);
+        }
+        else{
+            GuidePost guidePost = GuidePost.findById(postId)
+            user = User.get(guidePost.userId);
+        }
+        return user;
+    }
+
+    def getUserIdFromLikedObjectId(String likedObjectId,String likedObjectType){
+        User user;
+        if(likedObjectType.equals("comment")) {
+            Comment comment = Comment.findById(likedObjectId)
+            likedObjectId = comment.postId
+        }
+        TravellerPost travellerPost = TravellerPost.findById(likedObjectId)
+        if(travellerPost.userId!=null) {
+            user = User.get(travellerPost.userId);
+        }
+        else{
+            GuidePost guidePost = GuidePost.findById(likedObjectId)
+            user = User.get(guidePost.userId);
+        }
+        return user;
     }
 
     def getTopGuideFeeds(Integer offset){
