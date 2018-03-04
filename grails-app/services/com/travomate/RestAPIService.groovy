@@ -574,7 +574,7 @@ class RestAPIService {
             tripReviewExpando.review = tripReviewDTO
             tripReviewExpando.pics = tripReviewAlbumDTOArray
             tripReviewExpandoList.add(tripReviewExpando.properties)
-         }
+        }
         return tripReviewExpandoList
     }
 

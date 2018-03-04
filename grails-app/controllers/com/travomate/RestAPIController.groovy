@@ -327,7 +327,8 @@ class RestAPIController extends Rest {
                         log.info("ToUser First Name:" + toUser.firstName + " toUser DeviceId:" + toUser.deviceId)
 
                         ArrayList<String> deviceTokenArray = new ArrayList<String>();
-                        deviceTokenArray.add(toUser.deviceId);
+                        if(toUser.deviceId!=null)
+                            deviceTokenArray.add(toUser.deviceId);
 
                         String firstName = "";
                         if (fromUser.firstName != null)
@@ -363,7 +364,8 @@ class RestAPIController extends Rest {
                 User toUser = User.get(toUserId)
                 success("Friend request Accepted")
                 ArrayList<String> deviceTokenArray = new ArrayList<String>();
-                deviceTokenArray.add(fromUser.deviceId);
+                if(fromUser.deviceId!=null)
+                    deviceTokenArray.add(fromUser.deviceId);
 
                 log.info("toUser First Name:" + fromUser.firstName + " toUser DeviceId:" + fromUser.deviceId)
 
@@ -626,7 +628,8 @@ class RestAPIController extends Rest {
         log.info("UserId:" + user.firstName + " Device Id:" + user.deviceId);
 
         ArrayList<String> deviceTokenArray = new ArrayList<String>();
-        deviceTokenArray.add(user.deviceId);
+        if(user.deviceId!=null)
+            deviceTokenArray.add(user.deviceId);
 
         User user1 = User.get(postedById)
         String firstName = "";
@@ -643,7 +646,8 @@ class RestAPIController extends Rest {
         log.info("UserId:" + user.firstName + " Device Id:" + user.deviceId);
 
         ArrayList<String> deviceTokenArray = new ArrayList<String>();
-        deviceTokenArray.add(user.deviceId);
+        if(user.deviceId!=null)
+            deviceTokenArray.add(user.deviceId);
 
         User user1 = User.get(likedById)
         String firstName = "";
@@ -667,7 +671,8 @@ class RestAPIController extends Rest {
         }
         ArrayList<String> deviceTokenArray = new ArrayList<String>();
         for (Long id : userIds) {
-            deviceTokenArray.add(User.get(id).deviceId)
+            if (User.get(id).deviceId != null)
+                deviceTokenArray.add(User.get(id).deviceId)
         }
 
         String firstName = "";
@@ -683,8 +688,11 @@ class RestAPIController extends Rest {
         ArrayList<String> deviceTokenArray = new ArrayList<String>();
         User user = User.get(userId);
         List<UserFriends> userFriends = restAPIService.getUserFriends(user)
-        for (UserFriends uf : userFriends)
-            deviceTokenArray.add(uf.friend.deviceId);
+        for (UserFriends uf : userFriends) {
+            if (uf.friend.deviceId != null)
+                deviceTokenArray.add(uf.friend.deviceId);
+        }
+
 
         String firstName = "";
         if (user.firstName != null)
@@ -700,7 +708,7 @@ class RestAPIController extends Rest {
         List<User> nearByUsers = restAPIService.getListOfUsersByListOfId(nearbyUserIds)
         String firstName = "";
         for (User u : nearByUsers) {
-            if (u.id != userId) {
+            if (u.id != userId && u.deviceId != null) {
                 deviceTokenArray.add(u.deviceId);
             }
             if (u.id == userId) {

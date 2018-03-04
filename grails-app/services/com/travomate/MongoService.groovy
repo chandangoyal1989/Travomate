@@ -36,46 +36,46 @@ class MongoService {
 
 
 
-   ObjectId createOrModifyTravellerPost(def postParams, ObjectId postId){
-       log.info("in saveTravellerPost")
-       TravellerPost tp = null
-       if(postId != null){
-           tp = TravellerPost.get(postId)
-       }
-       if(tp == null) {
-           tp = new TravellerPost()
-           tp.source = postParams.source
-           tp.destination = postParams.destination
-           tp.startDate = postParams.startDate
-           tp.endDate = postParams.endDate
-           tp.startTime = postParams.startTime
-           tp.endTime = postParams.endTime
-           tp.postDescription = postParams.postDescription
-           tp.userId = Long.parseLong(postParams.userId + "")
-           tp.postTime = System.currentTimeMillis()
-           Double[] location = [Double.parseDouble(postParams.longitude + ""), Double.parseDouble(postParams.latitude + "")];
-           tp.location = location
-           tp = tp.save(failOnError: true)
+    ObjectId createOrModifyTravellerPost(def postParams, ObjectId postId){
+        log.info("in saveTravellerPost")
+        TravellerPost tp = null
+        if(postId != null){
+            tp = TravellerPost.get(postId)
+        }
+        if(tp == null) {
+            tp = new TravellerPost()
+            tp.source = postParams.source
+            tp.destination = postParams.destination
+            tp.startDate = postParams.startDate
+            tp.endDate = postParams.endDate
+            tp.startTime = postParams.startTime
+            tp.endTime = postParams.endTime
+            tp.postDescription = postParams.postDescription
+            tp.userId = Long.parseLong(postParams.userId + "")
+            tp.postTime = System.currentTimeMillis()
+            Double[] location = [Double.parseDouble(postParams.longitude + ""), Double.parseDouble(postParams.latitude + "")];
+            tp.location = location
+            tp = tp.save(failOnError: true)
 
-       } else {
-           //delete existing notifications and add new notifications
-           if(postParams.destination != null){
-               deleteNotifications(postId.toString())
-               sendNotification(postId.toString(), postParams, Constants.PostType.TRAVELLER)
-           }
-           tp.source = postParams.source != null ? postParams.source : tp.source
-           tp.destination = postParams.destination != null ? postParams.destination : tp.destination
-           tp.startDate = postParams.startDate != null ? postParams.startDate : tp.startDate
-           tp.endDate = postParams.endDate != null ? postParams.endDate : tp.endDate
-           tp.startTime = postParams.startTime != null ? postParams.startTime : tp.startTime
-           tp.endTime = postParams.endTime != null ? postParams.endTime : tp.endTime
-           tp.postDescription = postParams.postDescription != null ? postParams.postDescription : tp.postDescription
-           tp.postTime = System.currentTimeMillis()
-           tp = tp.save(failOnError: true)
-       }
+        } else {
+            //delete existing notifications and add new notifications
+            if(postParams.destination != null){
+                deleteNotifications(postId.toString())
+                sendNotification(postId.toString(), postParams, Constants.PostType.TRAVELLER)
+            }
+            tp.source = postParams.source != null ? postParams.source : tp.source
+            tp.destination = postParams.destination != null ? postParams.destination : tp.destination
+            tp.startDate = postParams.startDate != null ? postParams.startDate : tp.startDate
+            tp.endDate = postParams.endDate != null ? postParams.endDate : tp.endDate
+            tp.startTime = postParams.startTime != null ? postParams.startTime : tp.startTime
+            tp.endTime = postParams.endTime != null ? postParams.endTime : tp.endTime
+            tp.postDescription = postParams.postDescription != null ? postParams.postDescription : tp.postDescription
+            tp.postTime = System.currentTimeMillis()
+            tp = tp.save(failOnError: true)
+        }
         log.info("Saved Traveller Post : "+tp.id)
-       return tp.id
-   }
+        return tp.id
+    }
 
 
     def deleteTravellerPost(String postId){
@@ -177,7 +177,7 @@ class MongoService {
 
         int count = 0;
         for (final DBObject venue : collection.find(query).toArray()) {
-           count++;
+            count++;
         }
         System.out.println("obj count"+ count)
 
@@ -311,10 +311,10 @@ class MongoService {
         }
         return topPosts
     }
-    
+
     def getTravellerPostDestination(String destination){
         List<TravellerPost> travellerPostList = TravellerPost.findAllByDestination(destination)
-       return travellerPostList
+        return travellerPostList
     }
 
     def getUserIdFromPostId(String postId){
@@ -401,7 +401,7 @@ class MongoService {
     List<Comment> getCommentListForPost(def params){
         String postId = params.postId
         String postType = params.postType
-       return Comment.findAllByPostIdAndPostTypeAndParentCommentIdIsNull(postId, postType)
+        return Comment.findAllByPostIdAndPostTypeAndParentCommentIdIsNull(postId, postType)
     }
 
 
