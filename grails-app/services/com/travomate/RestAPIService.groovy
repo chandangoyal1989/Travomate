@@ -1,4 +1,3 @@
-
 package com.travomate
 
 import com.travomate.dto.TripReviewAlbumDTO
@@ -64,13 +63,6 @@ class RestAPIService {
     public List<UserProfileImage> getListOfImagesForUser(User user, String imageType) {
         return UserProfileImage.findAllByUserAndImageType(user, imageType)
     }
-
-/*    public List<User> getAllFriendUserOfUser(List<UserFriends> userFriends){
-        ArrayList<User> userList = new ArrayList<User>();
-        for(UserFriends uf : userFriends){
-            userList.add(User.get(uf.))
-        }
-    }*/
 
     String getUserOTP(User user, String source) {
         String otp = null
@@ -234,7 +226,6 @@ class RestAPIService {
         fileDescriptor.transferTo(new File(fileImgLoc + "${fileDescriptor.originalFilename}"))
     }
 
-
     /**
      * This method saves image to filesystem and saved image;s location in db
      * @param user
@@ -279,7 +270,7 @@ class RestAPIService {
 
 
             saveImageFileToSystem(imageLoc, photo)
-        }catch(Exception e){
+        } catch (Exception e) {
             log.error("Error while saving the image", e);
             reutrn false
         }
@@ -335,7 +326,6 @@ class RestAPIService {
         }
     }
 
-
     /**
      * This method checks if a friend request is already sent by the user
      * @param fromUserId
@@ -346,16 +336,15 @@ class RestAPIService {
         Boolean isFriendRequestSent = false;
         User sender = User.get(fromUserId)
         User recipient = User.get(toUserId)
-        log.info("sender "+sender + " recipient "+recipient)
+        log.info("sender " + sender + " recipient " + recipient)
         UserFriendRequest userFriendRequest1 = UserFriendRequest.findByRecipientAndSender(sender, recipient);
         UserFriendRequest userFriendRequest = UserFriendRequest.findByRecipientAndSender(recipient, sender);
-        if(userFriendRequest != null || userFriendRequest1 != null){
+        if (userFriendRequest != null || userFriendRequest1 != null) {
             isFriendRequestSent = true
         }
 
         return isFriendRequestSent;
     }
-
 
     /**
      * This method checks if a user is already a friend of another user
@@ -363,14 +352,14 @@ class RestAPIService {
      * @param toUserId
      * @return
      */
-    public Boolean checkIfSenderIsAlreadyAFriend(Long fromUserId, Long toUserId){
+    public Boolean checkIfSenderIsAlreadyAFriend(Long fromUserId, Long toUserId) {
         Boolean isFriend = false
         User sender = User.get(fromUserId)
         User recipient = User.get(toUserId)
         UserFriends friendship1 = UserFriends.findByFriendAndProfileUser(sender, recipient)
         UserFriends friendship2 = UserFriends.findByFriendAndProfileUser(recipient, sender)
         log.info("friendship1 " + friendship1 + " friendship2 " + friendship2)
-        if(friendship1 != null && friendship2 != null){
+        if (friendship1 != null && friendship2 != null) {
             isFriend = true
         }
 
@@ -413,7 +402,7 @@ class RestAPIService {
 
         if (recipient != null && sender != null) {
             UserFriendRequest friendRequest = UserFriendRequest.findByRecipientAndSender(recipient, sender)
-            if(friendRequest != null) {
+            if (friendRequest != null) {
                 friendRequest.delete()
             }
         }
@@ -427,7 +416,7 @@ class RestAPIService {
      */
     public List<UserFriendRequest> getFriendRequests(Long profileUserId, String requestType) {
         //Friend requests received by the given user
-        if(Constants.RECIPIENT_FRIEND_REQUEST_API_PATH_STR.equalsIgnoreCase(requestType)) {
+        if (Constants.RECIPIENT_FRIEND_REQUEST_API_PATH_STR.equalsIgnoreCase(requestType)) {
             return UserFriendRequest.findAllByRecipient(User.get(profileUserId))
         } else {
             //Friend requests sent by the given user
@@ -465,9 +454,7 @@ class RestAPIService {
                     friendship2.friend = recipient
                     friendship2.friendshipDate = new Date()
                     boolean valid = friendship1.validate()
-                    System.out.println("valid1 : " + valid)
                     valid = friendship2.validate()
-                    System.out.println("valid2 : " + valid)
                     friendship1.save(flush: true, failOnError: true)
                     friendship2.save(flush: true, failOnError: true)
 
@@ -477,8 +464,8 @@ class RestAPIService {
                 }
 
             }
-        }catch(Exception e){
-            log.error("Failed to save friendship between users with id " + fromUserId + " and  " + toUserId,e)
+        } catch (Exception e) {
+            log.error("Failed to save friendship between users with id " + fromUserId + " and  " + toUserId, e)
         }
 
         return isSaved
@@ -549,7 +536,6 @@ class RestAPIService {
         user.save(flush: true, failOnError: true)
     }
 
-
     /**
      * Returns the list of trip reviews posted by a user
      * @param userId
@@ -566,7 +552,7 @@ class RestAPIService {
         else
             reviewList = new ArrayList<>()
 
-        reviewList?.each{ review ->
+        reviewList?.each { review ->
             tripReviewExpando = new Expando()
             TripReviewDTO tripReviewDTO = tripReviewDTOMapper.mapTripReviewToTripReviewDTO(review)
             List<TripReviewAlbum> tripReviewAlbumList = TripReviewAlbum.findAllByTripReview(review)
@@ -585,11 +571,11 @@ class RestAPIService {
      * @param tripReviewId
      * @return
      */
-    public Boolean checkIfTripReviewWithSameNameExists(String tripReviewTitle, User user, Long tripReviewId){
+    public Boolean checkIfTripReviewWithSameNameExists(String tripReviewTitle, User user, Long tripReviewId) {
         TripReview tripReview = user != null ? TripReview.findByTitleAndUser(tripReviewTitle, user) : TripReview.findByTitle(tripReviewTitle)
         log.info("checkIfTripReviewWithSameNameExists tripReviewID : " + tripReviewId + " db tripReview Id : " + tripReview?.id)
-        if(tripReview != null ){
-            if((tripReviewId != 0 && tripReviewId == tripReview.id)) {
+        if (tripReview != null) {
+            if ((tripReviewId != 0 && tripReviewId == tripReview.id)) {
                 return false
             } else {
                 return true
@@ -631,18 +617,17 @@ class RestAPIService {
                 tripReview = tripReview.save(flush: true, failOnError: true)
                 log.info("saved Trip review : " + tripReview.title)
             }
-        }catch(Exception e){
-            log.error("Failed to save trip review for userId " + userId,e)
+        } catch (Exception e) {
+            log.error("Failed to save trip review for userId " + userId, e)
         }
         return tripReview
     }
-
 
     /**
      * Deletes the trip review and all related information
      * @param tripReviewId
      */
-    public void deleteTripReview(Long tripReviewId){
+    public void deleteTripReview(Long tripReviewId) {
         TripReview toBeDeleted = TripReview.get(tripReviewId)
 
         //Delete related tripreview album and cover pic
@@ -653,13 +638,13 @@ class RestAPIService {
     }
 
 
-    public TripReview saveTripReview(Long tripReviewId){
+    public TripReview saveTripReview(Long tripReviewId) {
         TripReview tripReview = TripReview.get(tripReviewId);
-        if(tripReview == null){
+        if (tripReview == null) {
             tripReview = new TripReview()
         }
         tripReview.user = user;
-        tripReview = tripReview.save(flush:true, failOnError: true)
+        tripReview = tripReview.save(flush: true, failOnError: true)
         return tripReview
     }
 
@@ -667,10 +652,10 @@ class RestAPIService {
      * Deletes all images of a trip review
      * @param tripReview
      */
-    public void deleteAllTripReviewImages(TripReview tripReview){
+    public void deleteAllTripReviewImages(TripReview tripReview) {
         List<TripReviewAlbum> tripReviewAlbumList = TripReviewAlbum.findAllByTripReview(tripReview);
         TripReviewAlbum.deleteAll(tripReviewAlbumList)
-        String toBeDeletedDir = Constants.IMAGE_BASE_DIR + tripReview.user.id + Constants.FILE_PATH_DELIMITER  + Constants.TRIP_REVIEW_IMAGE_DIR + Constants.FILE_PATH_DELIMITER + tripReview.title + "_" + tripReview.id + Constants.FILE_PATH_DELIMITER + Constants.TRIP_REVIEW_ALBUM_DIR + Constants.FILE_PATH_DELIMITER
+        String toBeDeletedDir = Constants.IMAGE_BASE_DIR + tripReview.user.id + Constants.FILE_PATH_DELIMITER + Constants.TRIP_REVIEW_IMAGE_DIR + Constants.FILE_PATH_DELIMITER + tripReview.title + "_" + tripReview.id + Constants.FILE_PATH_DELIMITER + Constants.TRIP_REVIEW_ALBUM_DIR + Constants.FILE_PATH_DELIMITER
         FileUtils.deleteDirectory(new File(toBeDeletedDir));
     }
 
@@ -729,7 +714,7 @@ class RestAPIService {
             tripReviewAlbum = tripReviewAlbum.save(flush: true, failOnError: true)
 
             saveImageFileToSystem(imageLoc, photo)
-        }catch(Exception e){
+        } catch (Exception e) {
             log.error("Fail to save trip review image for user with id " + user.id, e);
         }
 
@@ -738,15 +723,15 @@ class RestAPIService {
     }
 
 
-    public void deleteTripReviewImage(Long imageId){
+    public void deleteTripReviewImage(Long imageId) {
         TripReviewAlbum reviewImage = TripReviewAlbum.get(imageId)
         String imageLoc = reviewImage.imageLoc
         reviewImage.delete()
         File fileToBeDeleted = new File(imageLoc)
-        try{
+        try {
             Boolean isDeleted = Files.deleteIfExists(fileToBeDeleted.toPath())
             log.info("File with id ${imageId} got deleted : " + isDeleted)
-        } catch(Exception e){
+        } catch (Exception e) {
             log.info("Image with id ${imageId} could not be deleted")
             e.printStackTrace()
         }
@@ -761,7 +746,7 @@ class RestAPIService {
      * @return
      * @throws Exception
      */
-    public String sendFCMNotification(ArrayList<String> deviceTokenArray, String message, Constants.NotificationType notificationType) throws Exception{
+    public String sendFCMNotification(ArrayList<String> deviceTokenArray, String message, Constants.NotificationType notificationType) throws Exception {
         String result = "";
         URL url = new URL(Constants.API_URL_FCM);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -774,7 +759,7 @@ class RestAPIService {
         conn.setRequestProperty("Authorization", "key=${Constants.AUTH_KEY_FCM}");
         conn.setRequestProperty("Content-Type", "application/json");
 
-        for(String deviceToken: deviceTokenArray) {
+        for (String deviceToken : deviceTokenArray) {
             JSONObject json = new JSONObject();
             json.put("to", deviceToken.trim());
             JSONObject info = new JSONObject();
@@ -793,7 +778,7 @@ class RestAPIService {
 
                 String output;
                 while ((output = br.readLine()) != null) {
-                    log.info("FCM Output:",output);
+                    log.info("FCM Output:", output);
                 }
                 result = "success";
             } catch (Exception e) {
