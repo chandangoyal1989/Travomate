@@ -15,19 +15,19 @@ class MongoService {
 
     static transactional = 'mongo'
 
-    private static Mongo _mongo;
+    private static Mongo _mongo
 
     public void setupMongo() throws Exception {
-        _mongo = new Mongo(new DBAddress("127.0.0.1", 27017, "travomate"));
-//        _mongo = new Mongo(new DBAddress("122.160.30.50", 27017, "travomate"));
-        DBObject index2d = BasicDBObjectBuilder.start("location", "2d").get();
-        DBCollection collection = getCollection();
-        collection.ensureIndex(index2d);
+        _mongo = new Mongo(new DBAddress("127.0.0.1", 27017, "travomate"))
+//        _mongo = new Mongo(new DBAddress("122.160.30.50", 27017, "travomate"))
+        DBObject index2d = BasicDBObjectBuilder.start("location", "2d").get()
+        DBCollection collection = getCollection()
+        collection.ensureIndex(index2d)
     }
 
     private DBCollection getCollection() {
 
-        return _mongo.getDB("travomate").getCollection("user_location");
+        return _mongo.getDB("travomate").getCollection("user_location")
     }
 
     ObjectId createOrModifyTravellerPost(def postParams, ObjectId postId) {
@@ -47,7 +47,7 @@ class MongoService {
             tp.postDescription = postParams.postDescription
             tp.userId = Long.parseLong(postParams.userId + "")
             tp.postTime = System.currentTimeMillis()
-            Double[] location = [Double.parseDouble(postParams.longitude + ""), Double.parseDouble(postParams.latitude + "")];
+            Double[] location = [Double.parseDouble(postParams.longitude + ""), Double.parseDouble(postParams.latitude + "")]
             tp.location = location
             tp = tp.save(failOnError: true)
 
@@ -133,17 +133,17 @@ class MongoService {
         setupMongo()
 
         //Save location in db
-        Double[] location = [Double.parseDouble(postParams.longitude + ""), Double.parseDouble(postParams.latitude + "")];
-        log.info("Save user location:" + location);
-        final BasicDBObject loc = new BasicDBObject("user_id", Long.parseLong(postParams.userId + ""));
-        loc.put("location", location);
-        getCollection().update(new BasicDBObject("user_id", Long.parseLong(postParams.userId + "")), loc, true, false);
+        Double[] location = [Double.parseDouble(postParams.longitude + ""), Double.parseDouble(postParams.latitude + "")]
+        log.info("Save user location:" + location)
+        final BasicDBObject loc = new BasicDBObject("user_id", Long.parseLong(postParams.userId + ""))
+        loc.put("location", location)
+        getCollection().update(new BasicDBObject("user_id", Long.parseLong(postParams.userId + "")), loc, true, false)
     }
 
     def addLocation(final Long userId, final double[] location) {
-        final BasicDBObject loc = new BasicDBObject("user_id", userId);
-        loc.put("location", location);
-        getCollection().update(new BasicDBObject("name", pName), loc, true, false);
+        final BasicDBObject loc = new BasicDBObject("user_id", userId)
+        loc.put("location", location)
+        getCollection().update(new BasicDBObject("name", pName), loc, true, false)
     }
 
     def insertMongo() {
@@ -155,16 +155,16 @@ class MongoService {
         Double longLoc = -73.93414657
         Double latLoc = 40.82302903
         Double maxDistance = 5 * 1609.34
-        double[] loc = [longLoc, latLoc];
-        collection.ensureIndex(new BasicDBObject("location", "2dsphere"), "geospatialIdx");
-        BasicDBObject criteria = new BasicDBObject("\$nearSphere", loc);
-        criteria.put("\$maxDistance", maxDistance);
+        double[] loc = [longLoc, latLoc]
+        collection.ensureIndex(new BasicDBObject("location", "2dsphere"), "geospatialIdx")
+        BasicDBObject criteria = new BasicDBObject("\$nearSphere", loc)
+        criteria.put("\$maxDistance", maxDistance)
 
-        BasicDBObject query = new BasicDBObject("location", criteria);
+        BasicDBObject query = new BasicDBObject("location", criteria)
 
-        int count = 0;
+        int count = 0
         for (final DBObject venue : collection.find(query).toArray()) {
-            count++;
+            count++
         }
         log.info("obj count" + count)
     }
@@ -194,7 +194,7 @@ class MongoService {
         // Radius of the earth: 3959.8728
         final BasicDBObject query = new BasicDBObject("location", filter)
 
-        int count = 0;
+        int count = 0
         for (final DBObject nearLocation : getCollection().find(query).toArray()) {
             log.info("---- near venue: " + nearLocation.get("user_id"))
             nearUsers.add(nearLocation.get("user_id"))
@@ -305,16 +305,16 @@ class MongoService {
     }
 
     def getUserIdFromPostedByIdAndPostId(Long postedById, String postId) {
-        User user;
+        User user
         TravellerPost travellerPost = TravellerPost.findById(postId)
         if (travellerPost.userId != null && postedById != travellerPost.userId) {
-            user = User.get(travellerPost.userId);
+            user = User.get(travellerPost.userId)
         } else {
             GuidePost guidePost = GuidePost.findById(postId)
             if (postedById != guidePost.userId)
-                user = User.get(guidePost.userId);
+                user = User.get(guidePost.userId)
         }
-        return user;
+        return user
     }
 
     def getUserIdFromLikedObjectId(Long likedById, String likedObjectId, String likedObjectType) {
@@ -326,11 +326,11 @@ class MongoService {
         } else {
             TravellerPost travellerPost = TravellerPost.findById(likedObjectId)
             if (travellerPost.userId != null && likedById != travellerPost.userId) {
-                user = User.get(travellerPost.userId);
+                user = User.get(travellerPost.userId)
             } else {
                 GuidePost guidePost = GuidePost.findById(likedObjectId)
                 if (likedById != guidePost.userId)
-                    user = User.get(guidePost.userId);
+                    user = User.get(guidePost.userId)
             }
             return user
         }
@@ -363,7 +363,7 @@ class MongoService {
         }
         if (comment != null) {
             comment.commentText = postParams.commentText
-            comment.postedById = postParams.postedById != null ? Long.parseLong(postParams.postedById + "") : null;
+            comment.postedById = postParams.postedById != null ? Long.parseLong(postParams.postedById + "") : null
             comment.parentCommentId = postParams.parentCommentId
             comment.updatedOn = System.currentTimeMillis().toString()
             return comment.save(failOnError: true)
@@ -418,7 +418,7 @@ class MongoService {
         GuidePost.withTransaction { status ->
             def guidePostId = createOrModifyGuidePost(postParams, null)
             sendNotification(guidePostId.toString(), postParams, Constants.PostType.GUIDE)
-            return guidePostId;
+            return guidePostId
         }
 
     }
@@ -434,8 +434,8 @@ class MongoService {
 
 
     public def filterFeedByCity(String cityName, String feedType, Integer offset) {
-        def criteriaQuery = null;
-        def topPosts = null;
+        def criteriaQuery = null
+        def topPosts = null
         if (offset == null) {
             offset = 0
         }
@@ -455,20 +455,20 @@ class MongoService {
                 order("postTime", "desc")
             }
         }
-        return topPosts;
+        return topPosts
     }
 
     public Double[] getUserLocation(Long userId) {
         log.info("getting user information.")
-        setupMongo();
-        BasicDBObject whereQuery = new BasicDBObject();
-        whereQuery.put("user_id", userId);
-        DBCursor cursor = getCollection().find(whereQuery);
+        setupMongo()
+        BasicDBObject whereQuery = new BasicDBObject()
+        whereQuery.put("user_id", userId)
+        DBCursor cursor = getCollection().find(whereQuery)
         cursor.hasNext()
-        BasicDBObject document = (BasicDBObject) cursor.next();
-        Double[] location = document.get("location");
-        log.info("User Location:" + location[0] + "  " + location[1]);
-        return location;
+        BasicDBObject document = (BasicDBObject) cursor.next()
+        Double[] location = document.get("location")
+        log.info("User Location:" + location[0] + "  " + location[1])
+        return location
     }
 }
 

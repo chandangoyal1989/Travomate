@@ -746,7 +746,7 @@ class RestAPIService {
      * @return
      * @throws Exception
      */
-    public String sendFCMNotification(ArrayList<String> deviceTokenArray, String message, Constants.NotificationType notificationType) throws Exception {
+    public String sendFCMNotification(ArrayList<String> deviceTokenArray, String message) throws Exception {
         String result = "";
         URL url = new URL(Constants.API_URL_FCM);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
