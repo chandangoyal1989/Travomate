@@ -649,46 +649,51 @@ class RestAPIController extends Rest {
     private void sendPushNotificationForPostComment(Long postedById, String postId) {
         log.info("Inside sendPushNotificationForPostComment")
         User user = mongoService.getUserIdFromPostedByIdAndPostId(postedById, postId)
-        UserProfile userProfile = UserProfile.findByUser(user)
-        log.info("User first Name:" + userProfile.name + " Device Id:" + user.deviceId)
+        if (user != null) {
+            UserProfile userProfile = UserProfile.findByUser(user)
+            log.info("User first Name:" + userProfile.name + " Device Id:" + user.deviceId)
+            if (userProfile.userId != postedById) {
+                ArrayList<String> deviceTokenArray = new ArrayList<String>()
+                if (user.deviceId != null)
+                    deviceTokenArray.add(user.deviceId)
 
-        ArrayList<String> deviceTokenArray = new ArrayList<String>()
-        if (user.deviceId != null)
-            deviceTokenArray.add(user.deviceId)
+                User user1 = User.get(postedById)
+                UserProfile userProfile1 = UserProfile.findByUser(user1)
+                String name = ""
+                if (userProfile1.name != null)
+                    name = userProfile1.name
 
-        User user1 = User.get(postedById)
-        UserProfile userProfile1 = UserProfile.findByUser(user1)
-        String name = ""
-        if (userProfile1.name != null)
-            name = userProfile1.name
-
-        if (deviceTokenArray.size() > 0)
-            restAPIService.sendFCMNotification(deviceTokenArray, name + " has commented on your post.")
+                if (deviceTokenArray.size() > 0)
+                    restAPIService.sendFCMNotification(deviceTokenArray, name + " has commented on your post.")
+            }
+        }
     }
 
     private void sendPushNotificationForPostOrCommentLike(Long likedById, String likedObjectId, String likedObjectType) {
         log.info("Inside sendPushNotificationForPostOrCommentLike")
         User user = mongoService.getUserIdFromLikedObjectId(likedById, likedObjectId, likedObjectType)
-        UserProfile userProfile = UserProfile.findByUser(user)
-        log.info("User first Name:" + userProfile.name + " Device Id:" + user.deviceId)
+        if (user != null) {
+            UserProfile userProfile = UserProfile.findByUser(user)
+            log.info("User first Name:" + userProfile.name + " Device Id:" + user.deviceId)
+            if (userProfile.userId != likedById) {
+                ArrayList<String> deviceTokenArray = new ArrayList<String>()
+                if (user.deviceId != null)
+                    deviceTokenArray.add(user.deviceId)
 
-        ArrayList<String> deviceTokenArray = new ArrayList<String>()
-        if (user.deviceId != null)
-            deviceTokenArray.add(user.deviceId)
+                User user1 = User.get(likedById)
+                UserProfile userProfile1 = UserProfile.findByUser(user1)
+                String name = ""
+                if (userProfile1.name != null)
+                    name = userProfile1.name
 
-        User user1 = User.get(likedById)
-        UserProfile userProfile1 = UserProfile.findByUser(user1)
-        String name = ""
-        if (userProfile1.name != null)
-            name = userProfile1.name
-
-        if (deviceTokenArray.size() > 0) {
-            if (likedObjectType.equals("comment"))
-                restAPIService.sendFCMNotification(deviceTokenArray, name + " has liked your comment.")
-            else
-                restAPIService.sendFCMNotification(deviceTokenArray, name + " has liked your post.")
+                if (deviceTokenArray.size() > 0) {
+                    if (likedObjectType.equals("comment"))
+                        restAPIService.sendFCMNotification(deviceTokenArray, name + " has liked your comment.")
+                    else
+                        restAPIService.sendFCMNotification(deviceTokenArray, name + " has liked your post.")
+                }
+            }
         }
-
     }
 
     private List<String> getDeviceIdsForNearByTravellerOrGuide(Long userId, Double[] location) {
@@ -702,8 +707,6 @@ class RestAPIController extends Rest {
             }
         }
         return deviceTokenList
-        /* if (deviceTokenArray.size() > 0)
-             restAPIService.sendFCMNotification(deviceTokenArray,  name + " has unrevealed a new place! See what's new since you last visited. ", Constants.NotificationType.FRIENDS)*/
     }
 
     private List<String> getDeviceIdsForSameDestinationUser(Long userId, String destination, String startDate, String endDate) {
@@ -721,8 +724,6 @@ class RestAPIController extends Rest {
         }
 
         return deviceTokenList
-        /* if (deviceTokenArray.size() > 0)
-             restAPIService.sendFCMNotification(deviceTokenArray, "There's a match between " + name + "'s travel feed and yours! We recommend you to check it out. ", Constants.NotificationType.FRIENDS)*/
     }
 
     private List<String> getDeviceIdsForFriends(Long userId) {
@@ -735,8 +736,6 @@ class RestAPIController extends Rest {
         }
 
         return deviceTokenList
-        /*       if (deviceTokenArray.size() > 0)
-                   restAPIService.sendFCMNotification(deviceTokenArray, name + " has just now posted a new travel feed. Check out his new expeditions!", Constants.NotificationType.FRIENDS)*/
     }
 
     /**

@@ -307,9 +307,9 @@ class MongoService {
     def getUserIdFromPostedByIdAndPostId(Long postedById, String postId) {
         User user
         TravellerPost travellerPost = TravellerPost.findById(postId)
-        if (travellerPost.userId != null && postedById != travellerPost.userId) {
+        if (travellerPost!=null && travellerPost.userId != null && postedById != travellerPost.userId) {
             user = User.get(travellerPost.userId)
-        } else {
+        } else if(travellerPost == null){
             GuidePost guidePost = GuidePost.findById(postId)
             if (postedById != guidePost.userId)
                 user = User.get(guidePost.userId)
@@ -325,11 +325,12 @@ class MongoService {
             return user
         } else {
             TravellerPost travellerPost = TravellerPost.findById(likedObjectId)
-            if (travellerPost.userId != null && likedById != travellerPost.userId) {
+            if (travellerPost!=null && travellerPost.userId != null && likedById != travellerPost.userId) {
                 user = User.get(travellerPost.userId)
-            } else {
+            } else if(travellerPost == null) {
                 GuidePost guidePost = GuidePost.findById(likedObjectId)
-                if (likedById != guidePost.userId)
+                System.out.println("GuidePost Data:"+guidePost.userId)
+                if (guidePost.userId != null && likedById != guidePost.userId)
                     user = User.get(guidePost.userId)
             }
             return user
