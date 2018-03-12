@@ -11,6 +11,8 @@ import com.mongodb.Mongo
 import com.mongodb.MongoClient
 import org.bson.types.ObjectId
 
+import javax.jws.soap.SOAPBinding
+
 class MongoService {
 
     static transactional = 'mongo'
@@ -103,6 +105,7 @@ class MongoService {
             gp.postDescription = postParams.postDescription
             gp.postTime = System.currentTimeMillis()
             gp.userId = Long.parseLong(postParams.userId + "")
+            gp.price = Double.parseDouble(postParams.price+"")
         } else {
             //delete existing notifications and add new notifications
             if (postParams.serviceDescription != null) {
@@ -117,6 +120,7 @@ class MongoService {
             gp.serviceDescription = postParams.serviceDescription ?: gp.serviceDescription
             gp.postDescription = postParams.postDescription ?: gp.postDescription
             gp.postTime = System.currentTimeMillis()
+            gp.price = Double.parseDouble(postParams.price+"") ?: gp.price
         }
         gp = gp.save(failOnError: true)
         return gp.id
@@ -293,11 +297,11 @@ class MongoService {
         return topPosts
     }
 
-    def getTravellerPostDestination(String destination,String startDate, String endDate) {
+    def getTravellerPostDestination(String destination, String startDate, String endDate) {
         List<TravellerPost> travellerPostList = TravellerPost.findAllByDestination(destination)
-        List<TravellerPost> tpl=new ArrayList<TravellerPost>()
-        for(TravellerPost tp: travellerPostList){
-            if(!((endDate.compareTo(tp.startDate)==-1 || endDate.compareTo(tp.startDate)== 0)|| (startDate.compareTo(tp.endDate)==1 || startDate.compareTo(tp.endDate)==0))) {
+        List<TravellerPost> tpl = new ArrayList<TravellerPost>()
+        for (TravellerPost tp : travellerPostList) {
+            if (!((endDate.compareTo(tp.startDate) == -1 || endDate.compareTo(tp.startDate) == 0) || (startDate.compareTo(tp.endDate) == 1 || startDate.compareTo(tp.endDate) == 0))) {
                 tpl.add(tp)
             }
         }
@@ -307,12 +311,21 @@ class MongoService {
     def getUserIdFromPostedByIdAndPostId(Long postedById, String postId) {
         User user
         TravellerPost travellerPost = TravellerPost.findById(postId)
-        if (travellerPost!=null && travellerPost.userId != null && postedById != travellerPost.userId) {
+        if (travellerPost != null && travellerPost.userId != null && postedById != travellerPost.userId) {
             user = User.get(travellerPost.userId)
-        } else if(travellerPost == null){
+        } else if (travellerPost == null) {
             GuidePost guidePost = GuidePost.findById(postId)
             if (postedById != guidePost.userId)
                 user = User.get(guidePost.userId)
+        }
+        return user
+    }
+
+    def getUserIdFromPostedByIdAndParentCommentId(Long postedById, String parentCommentId) {
+        User user
+        Comment comment = Comment.findById(parentCommentId)
+        if (comment != null && comment.postedById != null && comment.postedById != postedById) {
+            user = User.get(comment.postedById)
         }
         return user
     }
@@ -325,11 +338,11 @@ class MongoService {
             return user
         } else {
             TravellerPost travellerPost = TravellerPost.findById(likedObjectId)
-            if (travellerPost!=null && travellerPost.userId != null && likedById != travellerPost.userId) {
+            if (travellerPost != null && travellerPost.userId != null && likedById != travellerPost.userId) {
                 user = User.get(travellerPost.userId)
-            } else if(travellerPost == null) {
+            } else if (travellerPost == null) {
                 GuidePost guidePost = GuidePost.findById(likedObjectId)
-                System.out.println("GuidePost Data:"+guidePost.userId)
+                System.out.println("GuidePost Data:" + guidePost.userId)
                 if (guidePost.userId != null && likedById != guidePost.userId)
                     user = User.get(guidePost.userId)
             }

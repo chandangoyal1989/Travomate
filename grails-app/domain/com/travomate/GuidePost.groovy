@@ -16,6 +16,7 @@ class GuidePost {
     String serviceDescription
     String postDescription
     String postTime
+    Double price
 
     static constraints = {
         postDescription(nullable: true)

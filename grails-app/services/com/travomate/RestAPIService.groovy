@@ -735,8 +735,6 @@ class RestAPIService {
             log.info("Image with id ${imageId} could not be deleted")
             e.printStackTrace()
         }
-
-
     }
 
     /**
@@ -746,7 +744,10 @@ class RestAPIService {
      * @return
      * @throws Exception
      */
-    public String sendFCMNotification(ArrayList<String> deviceTokenArray, String message) throws Exception {
+    public String sendFCMNotification(ArrayList<String> deviceTokenArray, String message, String notificationType) throws Exception {
+
+        log.info("Notification Type:"+notificationType)
+        log.info("-----------------------------------------------------------------------------------------------------------")
         String result = "";
         URL url = new URL(Constants.API_URL_FCM);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -760,6 +761,7 @@ class RestAPIService {
         conn.setRequestProperty("Content-Type", "application/json");
 
         for (String deviceToken : deviceTokenArray) {
+            log.info("Device ID:"+deviceToken)
             JSONObject json = new JSONObject();
             json.put("to", deviceToken.trim());
             JSONObject info = new JSONObject();
@@ -778,7 +780,7 @@ class RestAPIService {
 
                 String output;
                 while ((output = br.readLine()) != null) {
-                    log.info("FCM Output:", output);
+                    log.info("FCM Output: ", output);
                 }
                 result = "success";
             } catch (Exception e) {
@@ -787,6 +789,7 @@ class RestAPIService {
             }
             log.info("FCM Notification is sent successfully");
         }
+        log.info("-----------------------------------------------------------------------------------------------------------")
         return result;
     }
 }

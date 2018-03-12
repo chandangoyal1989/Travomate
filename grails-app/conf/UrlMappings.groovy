@@ -169,10 +169,6 @@ class UrlMappings {
 			action = [POST: "uploadTripReviewPic"]
 		}
 
-		"/api/testFCM"(controller: "restAPI") {
-			action = [GET: "testFCMNotifications"]
-		}
-
 		"/api/testAPI"(controller: "restAPI") {
 			action = [POST: "testAPI"]
 		}

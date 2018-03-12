@@ -51,7 +51,7 @@ class GuidePostDTOMapper {
         guidePostDTO.postDescription = guidePost.postDescription
         guidePostDTO.likeCount = Like.countByLikedObjectIdAndLikedObjectType(guidePost.id.toString(), Constants.GUIDE_FEED_TYPE)
         guidePostDTO.commentCount = Comment.countByPostIdAndPostTypeAndParentCommentIdIsNull(guidePost.id.toString(), Constants.GUIDE_FEED_TYPE)
-
+        guidePostDTO.price = guidePost.price
         return guidePostDTO
 
     }

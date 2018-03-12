@@ -336,7 +336,7 @@ class RestAPIController extends Rest {
                         if (fromUserProfile.name != null)
                             name = fromUserProfile.name
                         if (deviceTokenArray.size() > 0)
-                            restAPIService.sendFCMNotification(deviceTokenArray, name + " has sent you a friend request.")
+                            restAPIService.sendFCMNotification(deviceTokenArray, name + " has sent you a friend request.","For friend request")
 
                     } else {
                         error("Friend request could not be sent")
@@ -378,7 +378,7 @@ class RestAPIController extends Rest {
                 if (toUserProfile.name != null)
                     name = toUserProfile.name
                 if (deviceTokenArray.size() > 0)
-                    restAPIService.sendFCMNotification(deviceTokenArray, name + " has accepted your friend request.")
+                    restAPIService.sendFCMNotification(deviceTokenArray, name + " has accepted your friend request.","Friend request accepted.")
 
             } else {
                 error("Friend Request cannot be accepted")
@@ -492,11 +492,8 @@ class RestAPIController extends Rest {
         Double[] location = mongoService.getUserLocation(Long.parseLong(postParams.userId + ""))
         success(results, "Traveller Post saved")
 
-        log.info("Calling Push notification for NearBy Traveller and guide")
         deviceIdForNearByList = getDeviceIdsForNearByTravellerOrGuide(Long.parseLong(postParams.userId + ""), location)
-        log.info("Calling Push notification to friends")
         deviceIdForFriendsList = getDeviceIdsForFriends(Long.parseLong(postParams.userId + ""))
-        log.info("Calling Push notification for same destination people.")
         deviceIdForSameDestinationList = getDeviceIdsForSameDestinationUser(Long.parseLong(postParams.userId + ""), postParams.destination, postParams.startDate, postParams.endDate)
 
         User user = User.get(Long.parseLong(postParams.userId + ""))
@@ -507,11 +504,11 @@ class RestAPIController extends Rest {
             name = userProfile.name;
 
         if (deviceIdForSameDestinationList.size() > 0) {
-            restAPIService.sendFCMNotification(deviceIdForSameDestinationList, "There's a match between " + name + "'s travel feed and yours! We recommend you to check it out.")
-        } else if (deviceIdForNearByList.size() > 0) {
-            restAPIService.sendFCMNotification(deviceIdForNearByList, name + " has unrevealed a new place! See what's new since you last visited.")
+            restAPIService.sendFCMNotification(deviceIdForSameDestinationList, "There's a match between " + name + "'s travel feed and yours! We recommend you to check it out.","same destination people.")
+        } else if (deviceIdForFriendsList.size() > 0) {
+            restAPIService.sendFCMNotification(deviceIdForFriendsList, name + " has just now posted a new travel feed. Check out his new expeditions!","friends")
         } else {
-            restAPIService.sendFCMNotification(deviceIdForFriendsList, name + " has just now posted a new travel feed. Check out his new expeditions!")
+            restAPIService.sendFCMNotification(deviceIdForNearByList, name + " has unrevealed a new place! See what's new since you last visited.","Near By friends")
         }
     }
 
@@ -651,7 +648,7 @@ class RestAPIController extends Rest {
         User user = mongoService.getUserIdFromPostedByIdAndPostId(postedById, postId)
         if (user != null) {
             UserProfile userProfile = UserProfile.findByUser(user)
-            log.info("User first Name:" + userProfile.name + " Device Id:" + user.deviceId)
+            log.info("User Name:" + userProfile.name + " Device Id:" + user.deviceId)
             if (userProfile.userId != postedById) {
                 ArrayList<String> deviceTokenArray = new ArrayList<String>()
                 if (user.deviceId != null)
@@ -664,7 +661,31 @@ class RestAPIController extends Rest {
                     name = userProfile1.name
 
                 if (deviceTokenArray.size() > 0)
-                    restAPIService.sendFCMNotification(deviceTokenArray, name + " has commented on your post.")
+                    restAPIService.sendFCMNotification(deviceTokenArray, name + " has commented on your post.","Comment on post")
+            }
+        }
+    }
+
+    private void sendPushNotificationForPostCommentReply(Long postedById, String parentCommentId) {
+        log.info("Inside sendPushNotificationForPostCommentReply")
+        User user = mongoService.getUserIdFromPostedByIdAndParentCommentId(postedById, parentCommentId)
+
+        if (user != null) {
+            UserProfile userProfile = UserProfile.findByUser(user)
+            log.info("User Name:" + userProfile.name + " Device Id:" + user.deviceId)
+            if (userProfile.userId != postedById) {
+                ArrayList<String> deviceTokenArray = new ArrayList<String>()
+                if (user.deviceId != null)
+                    deviceTokenArray.add(user.deviceId)
+
+                User user1 = User.get(postedById)
+                UserProfile userProfile1 = UserProfile.findByUser(user1)
+                String name = ""
+                if (userProfile1.name != null)
+                    name = userProfile1.name
+
+                if (deviceTokenArray.size() > 0)
+                    restAPIService.sendFCMNotification(deviceTokenArray, name + " has replied on your comment.","Reply on post")
             }
         }
     }
@@ -674,7 +695,7 @@ class RestAPIController extends Rest {
         User user = mongoService.getUserIdFromLikedObjectId(likedById, likedObjectId, likedObjectType)
         if (user != null) {
             UserProfile userProfile = UserProfile.findByUser(user)
-            log.info("User first Name:" + userProfile.name + " Device Id:" + user.deviceId)
+            log.info("User Name:" + userProfile.name + " Device Id:" + user.deviceId)
             if (userProfile.userId != likedById) {
                 ArrayList<String> deviceTokenArray = new ArrayList<String>()
                 if (user.deviceId != null)
@@ -688,9 +709,9 @@ class RestAPIController extends Rest {
 
                 if (deviceTokenArray.size() > 0) {
                     if (likedObjectType.equals("comment"))
-                        restAPIService.sendFCMNotification(deviceTokenArray, name + " has liked your comment.")
+                        restAPIService.sendFCMNotification(deviceTokenArray, name + " has liked your comment.","like on comment")
                     else
-                        restAPIService.sendFCMNotification(deviceTokenArray, name + " has liked your post.")
+                        restAPIService.sendFCMNotification(deviceTokenArray, name + " has liked your post.","like on post")
                 }
             }
         }
@@ -700,7 +721,6 @@ class RestAPIController extends Rest {
         ArrayList<String> deviceTokenList = new ArrayList<String>()
         List<Long> nearbyUserIds = mongoService.nearSphereWIthMaxDistance(location)
         List<User> nearByUsers = restAPIService.getListOfUsersByListOfId(nearbyUserIds)
-
         for (User u : nearByUsers) {
             if (u.id != userId && u.deviceId != null) {
                 deviceTokenList.add(u.deviceId)
@@ -715,8 +735,10 @@ class RestAPIController extends Rest {
         List<TravellerPost> travellerPostList = mongoService.getTravellerPostDestination(destination, startDate, endDate)
 
         for (TravellerPost tp : travellerPostList) {
-            if (tp.userId != userId)
+            if (tp.userId != userId) {
+                log.info("SameDestinationUser:"+tp.userId)
                 userIdList.add(tp.userId)
+            }
         }
         for (Long id : userIdList) {
             if (User.get(id).deviceId != null)
@@ -730,11 +752,13 @@ class RestAPIController extends Rest {
         ArrayList<String> deviceTokenList = new ArrayList<String>()
         User user = User.get(userId)
         List<UserFriends> userFriends = restAPIService.getUserFriends(user)
+        log.info("User friend size:" + userFriends.size());
         for (UserFriends uf : userFriends) {
-            if (uf.friend.deviceId != null)
+            if (uf.friend.deviceId != null){
+                log.info("User friend email ID:" + uf.friend.email + "Device ID:"+uf.friend.deviceId)
                 deviceTokenList.add(uf.friend.deviceId)
+            }
         }
-
         return deviceTokenList
     }
 
@@ -785,7 +809,10 @@ class RestAPIController extends Rest {
         JSON results = response.properties as JSON
         log.info("Comments result:" + results)
         success(results, "Comments added to Post")
-        sendPushNotificationForPostComment(savedComment.postedById, savedComment.postId)
+        if (savedComment.parentCommentId == null)
+            sendPushNotificationForPostComment(savedComment.postedById, savedComment.postId)
+        else
+            sendPushNotificationForPostCommentReply(savedComment.postedById, savedComment.parentCommentId)
     }
 
     /**

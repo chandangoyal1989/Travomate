@@ -16,5 +16,5 @@ class GuidePostDTO {
     String postDescription
     Integer likeCount
     Integer commentCount
-
+    Double price
 }
