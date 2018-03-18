@@ -7,6 +7,7 @@ import org.bson.types.ObjectId
 import org.springframework.web.multipart.commons.CommonsMultipartFile
 
 import javax.jws.soap.SOAPBinding
+import javax.print.DocFlavor
 import java.util.zip.DeflaterOutputStream
 
 class RestAPIController extends Rest {
@@ -336,7 +337,7 @@ class RestAPIController extends Rest {
                         if (fromUserProfile.name != null)
                             name = fromUserProfile.name
                         if (deviceTokenArray.size() > 0)
-                            restAPIService.sendFCMNotification(deviceTokenArray, name + " has sent you a friend request.","For friend request")
+                            restAPIService.sendFCMNotification(deviceTokenArray, name + " has sent you a friend request.", "For friend request")
 
                     } else {
                         error("Friend request could not be sent")
@@ -378,7 +379,7 @@ class RestAPIController extends Rest {
                 if (toUserProfile.name != null)
                     name = toUserProfile.name
                 if (deviceTokenArray.size() > 0)
-                    restAPIService.sendFCMNotification(deviceTokenArray, name + " has accepted your friend request.","Friend request accepted.")
+                    restAPIService.sendFCMNotification(deviceTokenArray, name + " has accepted your friend request.", "Friend request accepted.")
 
             } else {
                 error("Friend Request cannot be accepted")
@@ -496,6 +497,12 @@ class RestAPIController extends Rest {
         deviceIdForFriendsList = getDeviceIdsForFriends(Long.parseLong(postParams.userId + ""))
         deviceIdForSameDestinationList = getDeviceIdsForSameDestinationUser(Long.parseLong(postParams.userId + ""), postParams.destination, postParams.startDate, postParams.endDate)
 
+       // System.out.println(deviceIdForSameDestinationList.size() + "  " + deviceIdForNearByList.size() + "  " + deviceIdForFriendsList.size());
+
+        removeDuplicatesFromLists(deviceIdForSameDestinationList, deviceIdForNearByList, deviceIdForFriendsList);
+
+     //   System.out.println(deviceIdForSameDestinationList.size() + "  " + deviceIdForNearByList.size() + "  " + deviceIdForFriendsList.size());
+
         User user = User.get(Long.parseLong(postParams.userId + ""))
         UserProfile userProfile = UserProfile.findByUser(user)
 
@@ -504,11 +511,13 @@ class RestAPIController extends Rest {
             name = userProfile.name;
 
         if (deviceIdForSameDestinationList.size() > 0) {
-            restAPIService.sendFCMNotification(deviceIdForSameDestinationList, "There's a match between " + name + "'s travel feed and yours! We recommend you to check it out.","same destination people.")
-        } else if (deviceIdForFriendsList.size() > 0) {
-            restAPIService.sendFCMNotification(deviceIdForFriendsList, name + " has just now posted a new travel feed. Check out his new expeditions!","friends")
-        } else {
-            restAPIService.sendFCMNotification(deviceIdForNearByList, name + " has unrevealed a new place! See what's new since you last visited.","Near By friends")
+            restAPIService.sendFCMNotification(deviceIdForSameDestinationList, "There's a match between " + name + "'s travel feed and yours! We recommend you to check it out.", "same destination people.")
+        }
+        if (deviceIdForFriendsList.size() > 0) {
+            restAPIService.sendFCMNotification(deviceIdForFriendsList, name + " has just now posted a new travel feed. Check out his new expeditions!", "friends")
+        }
+        if (deviceIdForNearByList.size() > 0) {
+            restAPIService.sendFCMNotification(deviceIdForNearByList, name + " has unrevealed a new place! See what's new since you last visited.", "Near By friends")
         }
     }
 
@@ -643,6 +652,41 @@ class RestAPIController extends Rest {
 
     }
 
+    private void removeDuplicatesFromLists(List<String> deviceIdForSameDestinationList, List<String> deviceIdForNearByList, List<String> deviceIdForFriendsList) {
+        Iterator<String> sameDestinationIterator = deviceIdForSameDestinationList.iterator();
+        Iterator<String> nearByIterator = deviceIdForNearByList.iterator();
+        while (sameDestinationIterator.hasNext()) {
+            String temp = sameDestinationIterator.next();
+            while (nearByIterator.hasNext()) {
+                if (temp.equals(nearByIterator.next())) {
+                    nearByIterator.remove();
+                }
+            }
+        }
+
+        sameDestinationIterator = deviceIdForSameDestinationList.iterator();
+        Iterator<String> friendsIterator = deviceIdForFriendsList.iterator();
+        while (sameDestinationIterator.hasNext()) {
+            String temp = sameDestinationIterator.next();
+            while (friendsIterator.hasNext()) {
+                if (temp.equals(friendsIterator.next())) {
+                    friendsIterator.remove();
+                }
+            }
+        }
+
+        nearByIterator = deviceIdForNearByList.iterator();
+        friendsIterator = deviceIdForFriendsList.iterator();
+        while (nearByIterator.hasNext()) {
+            String temp = nearByIterator.next();
+            while (friendsIterator.hasNext()) {
+                if (temp.equals(friendsIterator.next())) {
+                    friendsIterator.remove();
+                }
+            }
+        }
+    }
+
     private void sendPushNotificationForPostComment(Long postedById, String postId) {
         log.info("Inside sendPushNotificationForPostComment")
         User user = mongoService.getUserIdFromPostedByIdAndPostId(postedById, postId)
@@ -661,7 +705,7 @@ class RestAPIController extends Rest {
                     name = userProfile1.name
 
                 if (deviceTokenArray.size() > 0)
-                    restAPIService.sendFCMNotification(deviceTokenArray, name + " has commented on your post.","Comment on post")
+                    restAPIService.sendFCMNotification(deviceTokenArray, name + " has commented on your post.", "Comment on post")
             }
         }
     }
@@ -685,7 +729,7 @@ class RestAPIController extends Rest {
                     name = userProfile1.name
 
                 if (deviceTokenArray.size() > 0)
-                    restAPIService.sendFCMNotification(deviceTokenArray, name + " has replied on your comment.","Reply on post")
+                    restAPIService.sendFCMNotification(deviceTokenArray, name + " has replied on your comment.", "Reply on post")
             }
         }
     }
@@ -709,9 +753,9 @@ class RestAPIController extends Rest {
 
                 if (deviceTokenArray.size() > 0) {
                     if (likedObjectType.equals("comment"))
-                        restAPIService.sendFCMNotification(deviceTokenArray, name + " has liked your comment.","like on comment")
+                        restAPIService.sendFCMNotification(deviceTokenArray, name + " has liked your comment.", "like on comment")
                     else
-                        restAPIService.sendFCMNotification(deviceTokenArray, name + " has liked your post.","like on post")
+                        restAPIService.sendFCMNotification(deviceTokenArray, name + " has liked your post.", "like on post")
                 }
             }
         }
@@ -736,7 +780,7 @@ class RestAPIController extends Rest {
 
         for (TravellerPost tp : travellerPostList) {
             if (tp.userId != userId) {
-                log.info("SameDestinationUser:"+tp.userId)
+                log.info("SameDestinationUser:" + tp.userId)
                 userIdList.add(tp.userId)
             }
         }
@@ -754,8 +798,8 @@ class RestAPIController extends Rest {
         List<UserFriends> userFriends = restAPIService.getUserFriends(user)
         log.info("User friend size:" + userFriends.size());
         for (UserFriends uf : userFriends) {
-            if (uf.friend.deviceId != null){
-                log.info("User friend email ID:" + uf.friend.email + "Device ID:"+uf.friend.deviceId)
+            if (uf.friend.deviceId != null) {
+                log.info("User friend email ID:" + uf.friend.email + "Device ID:" + uf.friend.deviceId)
                 deviceTokenList.add(uf.friend.deviceId)
             }
         }
