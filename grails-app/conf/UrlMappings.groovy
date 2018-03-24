@@ -169,6 +169,10 @@ class UrlMappings {
 			action = [POST: "uploadTripReviewPic"]
 		}
 
+		"/api/alltripreview/list"(controller: "restAPI") {
+			action = [GET: "getAllTripReview"]
+		}
+
 		"/api/testAPI"(controller: "restAPI") {
 			action = [POST: "testAPI"]
 		}

@@ -537,6 +537,30 @@ class RestAPIService {
     }
 
     /**
+     * Returns the list of trip reviews posted by all user
+     * @return
+     */
+    public List<Expando> getAllTripReviews() {
+        List<Expando> tripReviewExpandoList = new ArrayList<Expando>()
+        Expando tripReviewExpando = null
+        List<TripReview> reviewList
+
+        reviewList = TripReview.findAll([ sort: 'id', order: 'desc'])
+
+        reviewList?.each { review ->
+            log.info("review:"+review);
+            tripReviewExpando = new Expando()
+            TripReviewDTO tripReviewDTO = tripReviewDTOMapper.mapTripReviewToTripReviewDTO(review)
+            List<TripReviewAlbum> tripReviewAlbumList = TripReviewAlbum.findAllByTripReview(review)
+            TripReviewAlbumDTO[] tripReviewAlbumDTOArray = tripReviewAlbumDTOMapper.mapTripReviewAlbumListtoTripReviewAlbumDTO(tripReviewAlbumList)
+            tripReviewExpando.review = tripReviewDTO
+            tripReviewExpando.pics = tripReviewAlbumDTOArray
+            tripReviewExpandoList.add(tripReviewExpando.properties)
+        }
+        return tripReviewExpandoList
+    }
+
+    /**
      * Returns the list of trip reviews posted by a user
      * @param userId
      * @return

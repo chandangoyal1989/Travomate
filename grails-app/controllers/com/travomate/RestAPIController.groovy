@@ -1126,6 +1126,17 @@ class RestAPIController extends Rest {
     }
 
     /**
+     * API to get the list of trip reviews posted by all user
+     * @return
+     */
+    def getAllTripReview() {
+        Expando tripReviewExpando = new Expando()
+        tripReviewExpando.userTripReviews = restAPIService.getAllTripReviews()
+        JSON results = tripReviewExpando.properties as JSON
+        success(results)
+    }
+
+    /**
      * API to a given filter feed by city name
      */
     def searchFeed() {
