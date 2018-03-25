@@ -4,6 +4,7 @@ import com.travomate.dto.*
 import com.travomate.tool.*
 import grails.converters.JSON
 import org.bson.types.ObjectId
+import org.omg.PortableInterceptor.SYSTEM_EXCEPTION
 import org.springframework.web.multipart.commons.CommonsMultipartFile
 
 import javax.jws.soap.SOAPBinding
@@ -21,6 +22,7 @@ class RestAPIController extends Rest {
     UserFriendRequestDTOMapper userFriendRequestDTOMapper = UserFriendRequestDTOMapper.getInstance()
     NotificationDTOMapper notificationDTOMapper = NotificationDTOMapper.getInstance()
     TravellerPostDTOMapper travellerPostDTOMapper = TravellerPostDTOMapper.getInstance()
+    UserExpressionDTOMapper userExpressionDTOMapper = UserExpressionDTOMapper.getInstance()
     GuidePostDTOMapper guidePostDTOMapper = GuidePostDTOMapper.getInstance()
     CommentDTOMapper commentDTOMapper = CommentDTOMapper.getInstance()
     LikeDTOMapper likeDTOMapper = LikeDTOMapper.getInstance()
@@ -133,7 +135,6 @@ class RestAPIController extends Rest {
         } else {
             notFound("user not found")
         }
-
     }
 
     /**
@@ -473,6 +474,90 @@ class RestAPIController extends Rest {
     }
 
     /**
+     * API to submit user expression post
+     * @return
+     */
+
+    def postUserExpression() {
+        Long userId = params.userId != null ? Long.parseLong(params.userId + "") : null
+        User user = User.get(userId)
+        log.info(" in postUserExpression")
+        CommonsMultipartFile imageFile = request.getFile('imageFile')
+
+        ObjectId postId = mongoService.saveUserExpression(user, params, imageFile)
+        Expando resultExpando = new Expando()
+        resultExpando.postId = postId.toString()
+        JSON results = resultExpando.properties as JSON
+        log.info("UserExpression Result:" + results)
+        success(results, "UserExpression saved")
+    }
+
+    /**
+     * API to delete user expression
+     * @return
+     */
+    def deleteUserExpression() {
+        String postId = params.postId
+        System.out.println("Post ID:"+postId);
+        if (postId != null) {
+            //  mongoService.deleteNotifications(postId)
+            mongoService.deleteUserExpression(postId)
+            success("UserExpression deleted successfully.")
+        } else {
+            error("UserExpression Id is missing")
+        }
+    }
+
+    /**
+     * API to modify a user expression
+     * @return
+     */
+    def editUserExpression() {
+        Long userId = params.userId != null ? Long.parseLong(params.userId + "") : null
+        User user = User.get(userId)
+        log.info(" in editUserExpression")
+        CommonsMultipartFile imageFile = request.getFile('imageFile')
+        def postId = new ObjectId(params.postId)
+
+        if (postId != null) {
+            ObjectId postIdResult = mongoService.createOrModifyUserExpression(user, params, imageFile, postId)
+            Expando resultExpando = new Expando()
+            resultExpando.postId = postIdResult.toString()
+            JSON results = resultExpando.properties as JSON
+            log.info("UserExpression edit Result:" + results)
+            success(results,"UserExpression modified.")
+        } else {
+            error("UserExpression id is missing.")
+        }
+    }
+
+    /**
+     * API to get a list of user expression
+     * @return
+     */
+    def getUserExpressions() {
+        def topPosts = mongoService.getLatestUserExpressions(Integer.parseInt(params.offset))
+        UserExpressionDTO[] userExpressionDTOs = userExpressionDTOMapper.mapUserExpressionListToUserExpressionDTOArray(topPosts)
+        Expando userExpressionResponse = new Expando()
+        userExpressionResponse.userExpression = userExpressionDTOs
+        JSON results = userExpressionResponse.properties as JSON
+        success(results)
+    }
+
+    /**
+     * API to get user expression by post ID
+     * @return
+     */
+    def getUserExpression() {
+        def list = mongoService.getLatestUserExpression(params.postId)
+        UserExpressionDTO[] userExpressionDTOs = userExpressionDTOMapper.mapUserExpressionListToUserExpressionDTOArray(list)
+        Expando userExpressionResponse = new Expando()
+        userExpressionResponse.userExpression = userExpressionDTOs
+        JSON results = userExpressionResponse.properties as JSON
+        success(results)
+    }
+
+    /**
      * API to submit traveller post
      * @return
      */
@@ -497,11 +582,7 @@ class RestAPIController extends Rest {
         deviceIdForFriendsList = getDeviceIdsForFriends(Long.parseLong(postParams.userId + ""))
         deviceIdForSameDestinationList = getDeviceIdsForSameDestinationUser(Long.parseLong(postParams.userId + ""), postParams.destination, postParams.startDate, postParams.endDate)
 
-       // System.out.println(deviceIdForSameDestinationList.size() + "  " + deviceIdForNearByList.size() + "  " + deviceIdForFriendsList.size());
-
         removeDuplicatesFromLists(deviceIdForSameDestinationList, deviceIdForNearByList, deviceIdForFriendsList);
-
-     //   System.out.println(deviceIdForSameDestinationList.size() + "  " + deviceIdForNearByList.size() + "  " + deviceIdForFriendsList.size());
 
         User user = User.get(Long.parseLong(postParams.userId + ""))
         UserProfile userProfile = UserProfile.findByUser(user)

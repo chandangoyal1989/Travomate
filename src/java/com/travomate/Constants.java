@@ -26,6 +26,7 @@ public class Constants {
     public static final String COVER_PIC_TYPE_IMAGE = "coverImage";
     public static final String ID_PROOF_TYPE_IMAGE = "idProof";
     public static final String TRIP_REVIEW_COVER_IMAGE = "tripReviewCover";
+    public static final String USER_EXPRESSION_IMAGE = "userExpressionImage";
     public static final String TRIP_REVIEW_ALBUM = "tripReviewAlbum";
     public static final String OTP_MAIL_SOURCE_KEY = "email";
     public static final String OTP_PHONE_SOURCE_KEY = "phone";
@@ -41,6 +42,7 @@ public class Constants {
     public static final String ID_PROOF_IMAGE_DIR = "id_proof_image";
     public static final String TRIP_REVIEW_IMAGE_DIR = "trip_review";
     public static final String FILE_PATH_DELIMITER = "/";
+    public static final String USER_EXPRESSION_IMAGE_DIR = "user_expression";
 
     public static final String LIKE_POST_STRING = "post";
     public static final String LIKE_COMMENT_STRING = "comment";
@@ -52,6 +54,8 @@ public class Constants {
 
     public static final String GUIDE_FEED_TYPE = "guide";
     public static final String TRAVELLER_FEED_TYPE = "traveller";
+    public static final String FEED_TYPE = "userexpression";
+
 
 
     public final static String AUTH_KEY_FCM = "AAAAe6XXv1U:APA91bFL3Nnl43m82X1K34UcTN-peDmbAqmTAh-oEqjRXJGZaQOi9YXtO5WaZ97jh6hvos0DcMxtczZ2m9vVYzPDdPCFrILsdbt4M7mysHrPCOio5lPeNch_FMfpxFo_vkKAEYpoLPSD";

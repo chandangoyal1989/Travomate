@@ -10,6 +10,7 @@ import com.mongodb.DBObject
 import com.mongodb.Mongo
 import com.mongodb.MongoClient
 import org.bson.types.ObjectId
+import org.springframework.web.multipart.commons.CommonsMultipartFile
 
 import javax.jws.soap.SOAPBinding
 
@@ -73,10 +74,47 @@ class MongoService {
         return tp.id
     }
 
+    ObjectId createOrModifyUserExpression(User user, def param, CommonsMultipartFile photo, ObjectId postId) {
+        String picName = photo.originalFilename
+        String imageBaseDir = Constants.IMAGE_BASE_DIR
+        String imageLoc = null
+        String userExpressionDir = ""
+        log.info("in saveUserExpression")
+        UserExpression ue = null
+        if (postId != null) {
+            ue = UserExpression.get(postId)
+        }
+        if (ue == null) {
+            ue = new UserExpression()
+            ue.description = param.description
+            ue.userId = Long.parseLong(param.userId + "")
+            userExpressionDir = System.currentTimeMillis();
+            imageLoc = imageBaseDir + user.id + Constants.FILE_PATH_DELIMITER + Constants.USER_EXPRESSION_IMAGE_DIR + Constants.FILE_PATH_DELIMITER + userExpressionDir + Constants.FILE_PATH_DELIMITER
+            ue.imageLoc = imageLoc + picName
+            ue = ue.save(failOnError: true)
+        } else {
+            ue.description = param.description != null ? param.description : ue.description
+            userExpressionDir = System.currentTimeMillis();
+            imageLoc = imageBaseDir + user.id + Constants.FILE_PATH_DELIMITER + Constants.USER_EXPRESSION_IMAGE_DIR + Constants.FILE_PATH_DELIMITER + userExpressionDir + Constants.FILE_PATH_DELIMITER
+            ue.imageLoc = picName != null ? (imageLoc + picName) : ue.imageLoc
+            ue = ue.save(failOnError: true)
+        }
+        saveImageFileToSystem(imageLoc, photo)
+        log.info("Saved UserExpression: " + ue.id)
+        return ue.id
+    }
+
     def deleteTravellerPost(String postId) {
         def objectPostId = new ObjectId(postId)
         TravellerPost tp = TravellerPost.get(objectPostId)
         tp.delete()
+    }
+
+    def deleteUserExpression(String postId) {
+        def objectPostId = new ObjectId(postId)
+        UserExpression ue = UserExpression.get(objectPostId)
+        if (ue != null)
+            ue.delete()
     }
 
     def deleteNotifications(String postId) {
@@ -105,7 +143,7 @@ class MongoService {
             gp.postDescription = postParams.postDescription
             gp.postTime = System.currentTimeMillis()
             gp.userId = Long.parseLong(postParams.userId + "")
-            gp.price = Double.parseDouble(postParams.price+"")
+            gp.price = Double.parseDouble(postParams.price + "")
         } else {
             //delete existing notifications and add new notifications
             if (postParams.serviceDescription != null) {
@@ -120,7 +158,7 @@ class MongoService {
             gp.serviceDescription = postParams.serviceDescription ?: gp.serviceDescription
             gp.postDescription = postParams.postDescription ?: gp.postDescription
             gp.postTime = System.currentTimeMillis()
-            gp.price = Double.parseDouble(postParams.price+"") ?: gp.price
+            gp.price = Double.parseDouble(postParams.price + "") ?: gp.price
         }
         gp = gp.save(failOnError: true)
         return gp.id
@@ -297,6 +335,24 @@ class MongoService {
         return topPosts
     }
 
+    def getLatestUserExpressions(Integer offset) {
+        if (offset == null) {
+            offset = 0
+        }
+        def userExpression = UserExpression.createCriteria()
+        def topPosts = userExpression.list(max: Constants.TOP_POST_COUNT, offset: offset) {
+            order("postTime", "desc")
+        }
+        return topPosts
+    }
+    def getLatestUserExpression(String postId) {
+        def userExpression = UserExpression.get(postId)
+        ArrayList<UserExpression> list =new ArrayList<UserExpression>();
+        list.add(userExpression)
+        return list
+    }
+
+
     def getTravellerPostDestination(String destination, String startDate, String endDate) {
         List<TravellerPost> travellerPostList = TravellerPost.findAllByDestination(destination)
         List<TravellerPost> tpl = new ArrayList<TravellerPost>()
@@ -446,6 +502,13 @@ class MongoService {
         }
     }
 
+    ObjectId saveUserExpression(User user, def param, CommonsMultipartFile photo) {
+        UserExpression.withTransaction { status ->
+            ObjectId postId = createOrModifyUserExpression(user, param, photo, null)
+            //  sendNotification(postId.toString(), postParams, Constants.PostType.TRAVELLER)
+            return postId
+        }
+    }
 
     public def filterFeedByCity(String cityName, String feedType, Integer offset) {
         def criteriaQuery = null
@@ -472,7 +535,7 @@ class MongoService {
         return topPosts
     }
 
-    public Double[] getUserLocation(Long userId) {
+    def Double[] getUserLocation(Long userId) {
         log.info("getting user information.")
         setupMongo()
         BasicDBObject whereQuery = new BasicDBObject()
@@ -483,6 +546,14 @@ class MongoService {
         Double[] location = document.get("location")
         log.info("User Location:" + location[0] + "  " + location[1])
         return location
+    }
+
+    def void saveImageFileToSystem(String fileImgLoc, CommonsMultipartFile fileDescriptor) {
+        File file = new File(fileImgLoc)
+        if (!file.exists()) {
+            file.mkdirs()
+        }
+        fileDescriptor.transferTo(new File(fileImgLoc + "${fileDescriptor.originalFilename}"))
     }
 }
 
