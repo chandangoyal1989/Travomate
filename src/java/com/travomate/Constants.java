@@ -54,7 +54,7 @@ public class Constants {
 
     public static final String GUIDE_FEED_TYPE = "guide";
     public static final String TRAVELLER_FEED_TYPE = "traveller";
-    public static final String FEED_TYPE = "userexpression";
+    public static final String USEREXRESSION_FEED_TYPE = "userexpression";
 
 
 

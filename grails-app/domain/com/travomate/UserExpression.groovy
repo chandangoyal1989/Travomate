@@ -10,6 +10,7 @@ class UserExpression {
     String imageLoc
 
     static constraints = {
+        imageLoc(nullable: true)
     }
 
     static mapping = {

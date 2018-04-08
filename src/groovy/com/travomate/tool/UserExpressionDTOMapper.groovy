@@ -13,14 +13,14 @@ class UserExpressionDTOMapper {
 
     UserProfileDTOMapper userProfileDTOMapper = UserProfileDTOMapper.getInstance()
 
-    public UserExpressionDTO[] mapUserExpressionListToUserExpressionDTOArray(List<UserExpression> UserExpressionList) {
+    public UserExpressionDTO[] mapUserExpressionListToUserExpressionDTOArray(List<UserExpression> userExpressionList) {
         List<UserExpressionDTO> UserExpressionDTOs = new ArrayList<UserExpressionDTO>()
-        if (UserExpressionList == null || UserExpressionList?.isEmpty()) {
+        if (userExpressionList == null || userExpressionList?.isEmpty()) {
             return UserExpressionDTOs
         }
 
 
-        for (UserExpression UserExpression : UserExpressionList) {
+        for (UserExpression UserExpression : userExpressionList) {
             UserExpressionDTOs.add(mapUserExpressionToUserExpressionDTO(UserExpression))
         }
 
@@ -28,26 +28,27 @@ class UserExpressionDTOMapper {
     }
 
 
-    public UserExpressionDTO mapUserExpressionToUserExpressionDTO(UserExpression UserExpression){
-        if(UserExpression == null){
+    public UserExpressionDTO mapUserExpressionToUserExpressionDTO(UserExpression userExpression){
+        if(userExpression == null){
             return null
         }
 
-        User user = User.get(UserExpression.userId)
+        User user = User.get(userExpression.userId)
         UserProfileDTO userProfileDTO = null
         if(user != null){
             UserProfile userProfile = UserProfile.findByUser(user)
             userProfileDTO = userProfileDTOMapper.mapUserProfileToUserProfileDTO(userProfile)
         }
 
-        UserExpressionDTO UserExpressionDTO = new UserExpressionDTO()
-        UserExpressionDTO.id = UserExpression.id.toString()
-        UserExpressionDTO.user = userProfileDTO
-        UserExpressionDTO.description = UserExpression.description
-        UserExpressionDTO.likeCount = Like.countByLikedObjectIdAndLikedObjectType(UserExpression.id.toString(), Constants.FEED_TYPE)
-        UserExpressionDTO.commentCount = Comment.countByPostIdAndPostTypeAndParentCommentIdIsNull(UserExpression.id.toString(), Constants.FEED_TYPE)
+        UserExpressionDTO userExpressionDTO = new UserExpressionDTO()
+        userExpressionDTO.id = userExpression.id.toString()
+        userExpressionDTO.imageLoc = userExpression.imageLoc?.replace(Constants.IMAGE_ROOT_DIR,"/")
+        userExpressionDTO.user = userProfileDTO
+        userExpressionDTO.description = userExpression.description
+        userExpressionDTO.likeCount = Like.countByLikedObjectIdAndLikedObjectType(userExpression.id.toString(), Constants.USEREXRESSION_FEED_TYPE)
+        userExpressionDTO.commentCount = Comment.countByPostIdAndPostTypeAndParentCommentIdIsNull(userExpression.id.toString(), Constants.USEREXRESSION_FEED_TYPE)
 
-        return UserExpressionDTO
+        return userExpressionDTO
 
     }
 }

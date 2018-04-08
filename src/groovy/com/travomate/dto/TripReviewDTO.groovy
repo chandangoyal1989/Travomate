@@ -5,7 +5,7 @@ package com.travomate.dto
  */
 class TripReviewDTO {
     Long id;
-    UserDTO user;
+    UserProfileDTO userProfile;
     String title;
     String tripCoverPicLoc;
     String timeToVisit;

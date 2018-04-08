@@ -10,6 +10,7 @@ import com.mongodb.DBObject
 import com.mongodb.Mongo
 import com.mongodb.MongoClient
 import org.bson.types.ObjectId
+import org.omg.PortableInterceptor.SYSTEM_EXCEPTION
 import org.springframework.web.multipart.commons.CommonsMultipartFile
 
 import javax.jws.soap.SOAPBinding
@@ -75,11 +76,12 @@ class MongoService {
     }
 
     ObjectId createOrModifyUserExpression(User user, def param, CommonsMultipartFile photo, ObjectId postId) {
-        String picName = photo.originalFilename
+        String picName = null;
+        picName = photo?.originalFilename
         String imageBaseDir = Constants.IMAGE_BASE_DIR
         String imageLoc = null
         String userExpressionDir = ""
-        log.info("in saveUserExpression")
+        log.info("in Save User Expression")
         UserExpression ue = null
         if (postId != null) {
             ue = UserExpression.get(postId)
@@ -90,17 +92,22 @@ class MongoService {
             ue.userId = Long.parseLong(param.userId + "")
             userExpressionDir = System.currentTimeMillis();
             imageLoc = imageBaseDir + user.id + Constants.FILE_PATH_DELIMITER + Constants.USER_EXPRESSION_IMAGE_DIR + Constants.FILE_PATH_DELIMITER + userExpressionDir + Constants.FILE_PATH_DELIMITER
-            ue.imageLoc = imageLoc + picName
+            if (picName != null)
+                ue.imageLoc = imageLoc + picName
+            else
+                ue.imageLoc = null
             ue = ue.save(failOnError: true)
         } else {
             ue.description = param.description != null ? param.description : ue.description
             userExpressionDir = System.currentTimeMillis();
             imageLoc = imageBaseDir + user.id + Constants.FILE_PATH_DELIMITER + Constants.USER_EXPRESSION_IMAGE_DIR + Constants.FILE_PATH_DELIMITER + userExpressionDir + Constants.FILE_PATH_DELIMITER
-            ue.imageLoc = picName != null ? (imageLoc + picName) : ue.imageLoc
+            ue.imageLoc = picName != null ? (imageLoc + picName) : null
             ue = ue.save(failOnError: true)
         }
-        saveImageFileToSystem(imageLoc, photo)
-        log.info("Saved UserExpression: " + ue.id)
+
+        if (picName != null)
+            saveImageFileToSystem(imageLoc, photo)
+        log.info("Saved User Expression: " + ue.id)
         return ue.id
     }
 
@@ -345,9 +352,10 @@ class MongoService {
         }
         return topPosts
     }
+
     def getLatestUserExpression(String postId) {
         def userExpression = UserExpression.get(postId)
-        ArrayList<UserExpression> list =new ArrayList<UserExpression>();
+        ArrayList<UserExpression> list = new ArrayList<UserExpression>();
         list.add(userExpression)
         return list
     }
@@ -365,41 +373,57 @@ class MongoService {
     }
 
     def getUserIdFromPostedByIdAndPostId(Long postedById, String postId) {
-        User user
-        TravellerPost travellerPost = TravellerPost.findById(postId)
-        if (travellerPost != null && travellerPost.userId != null && postedById != travellerPost.userId) {
+        User user = null;
+        GuidePost guidePost = null
+        UserExpression userExpression = null
+        TravellerPost travellerPost = TravellerPost.get(postId)
+        if (travellerPost != null && postedById != travellerPost?.userId) {
             user = User.get(travellerPost.userId)
         } else if (travellerPost == null) {
-            GuidePost guidePost = GuidePost.findById(postId)
-            if (postedById != guidePost.userId)
+            guidePost = GuidePost.get(postId)
+            if (guidePost != null && postedById != guidePost?.userId) {
                 user = User.get(guidePost.userId)
+            }
+        } else if (guidePost == null) {
+            userExpression = UserExpression.get(postId)
+            if (userExpression != null && postedById != userExpression?.userId) {
+                user = User.get(userExpression.userId)
+            }
         }
         return user
     }
 
     def getUserIdFromPostedByIdAndParentCommentId(Long postedById, String parentCommentId) {
-        User user
-        Comment comment = Comment.findById(parentCommentId)
-        if (comment != null && comment.postedById != null && comment.postedById != postedById) {
+        User user = null;
+        Comment comment = Comment.get(parentCommentId)
+        if (comment != null && comment?.postedById != postedById) {
             user = User.get(comment.postedById)
         }
         return user
     }
 
     def getUserIdFromLikedObjectId(Long likedById, String likedObjectId, String likedObjectType) {
-        User user
+        User user = null
         if (likedObjectType.equals("comment")) {
-            Comment comment = Comment.findById(likedObjectId)
+            Comment comment = Comment.get(likedObjectId)
             user = User.get(comment.postedById)
             return user
         } else {
-            TravellerPost travellerPost = TravellerPost.findById(likedObjectId)
-            if (travellerPost != null && travellerPost.userId != null && likedById != travellerPost.userId) {
-                user = User.get(travellerPost.userId)
+            GuidePost guidePost = null
+            UserExpression userExpression = null
+            TravellerPost travellerPost = TravellerPost.get(likedObjectId)
+            log.info("Traveller Post Data:" + travellerPost?.userId)
+            if (travellerPost != null && likedById != travellerPost?.userId) {
+                user = User.get(travellerPost?.userId)
             } else if (travellerPost == null) {
-                GuidePost guidePost = GuidePost.findById(likedObjectId)
-                System.out.println("GuidePost Data:" + guidePost.userId)
-                if (guidePost.userId != null && likedById != guidePost.userId)
+                userExpression = UserExpression.get(likedObjectId)
+                log.info("User Expression Data:" + userExpression?.userId)
+                if (userExpression != null && likedById != userExpression?.userId)
+                    user = User.get(userExpression.userId)
+            } else if (userExpression == null) {
+                guidePost = GuidePost.get(likedObjectId)
+                log.info("Guide Post Data:" + guidePost?.id)
+                if (guidePost != null && likedById != guidePost?.userId)
                     user = User.get(guidePost.userId)
             }
             return user
@@ -427,7 +451,7 @@ class MongoService {
         } else {
             comment = new Comment()
             comment.postId = postId
-            comment.postType = postType
+            comment.postType = postType.toLowerCase()
             comment.postDate = System.currentTimeMillis()
 
         }
@@ -460,7 +484,7 @@ class MongoService {
     List<Comment> getCommentListForPost(def params) {
         String postId = params.postId
         String postType = params.postType
-        return Comment.findAllByPostIdAndPostTypeAndParentCommentIdIsNull(postId, postType)
+        return Comment.findAllByPostIdAndPostTypeAndParentCommentIdIsNull(postId, postType.toLowerCase())
     }
 
 
@@ -479,7 +503,8 @@ class MongoService {
         userLike.likedBy = Long.parseLong(postParams.likedById + "")
         userLike.likedOn = System.currentTimeMillis()
         userLike.likedObjectId = likedObjectId
-        userLike.likedObjectType = postParams.likedObjectType.toLowerCase()  //can be  "guide" ,"traveller" ,"comment"
+        userLike.likedObjectType = postParams.likedObjectType.toLowerCase()
+        //can be  "guide" ,"traveller" ,"comment", "userexpression"
         return userLike.save(failOnError: true)
     }
 

@@ -173,7 +173,7 @@ class UrlMappings {
             action = [GET: "getAllTripReview"]
         }
 
-        "/api/userExpression/"(controller: "restAPI") {
+        "/api/userExpression/${userId}/save"(controller: "restAPI") {
             action = [POST: "postUserExpression"]
         }
 
@@ -181,8 +181,12 @@ class UrlMappings {
             action = [GET: "getUserExpressions"]
         }
 
+        "/api/userExpression/${postId}/${userId}"(controller: "restAPI") {
+            action = [POST: "editUserExpression"]
+        }
+
         "/api/userExpression/${postId}"(controller: "restAPI") {
-            action = [DELETE: "deleteUserExpression", POST: "editUserExpression", GET: "getUserExpression"]
+            action = [DELETE: "deleteUserExpression", GET: "getUserExpression"]
         }
 
         "/api/testAPI"(controller: "restAPI") {

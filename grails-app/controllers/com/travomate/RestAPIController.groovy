@@ -489,7 +489,7 @@ class RestAPIController extends Rest {
         resultExpando.postId = postId.toString()
         JSON results = resultExpando.properties as JSON
         log.info("UserExpression Result:" + results)
-        success(results, "UserExpression saved")
+        success(results, "UserExpression saved.")
     }
 
     /**
@@ -498,7 +498,7 @@ class RestAPIController extends Rest {
      */
     def deleteUserExpression() {
         String postId = params.postId
-        System.out.println("Post ID:"+postId);
+        log.info("Deleted Post ID:"+postId);
         if (postId != null) {
             //  mongoService.deleteNotifications(postId)
             mongoService.deleteUserExpression(postId)
@@ -524,7 +524,7 @@ class RestAPIController extends Rest {
             Expando resultExpando = new Expando()
             resultExpando.postId = postIdResult.toString()
             JSON results = resultExpando.properties as JSON
-            log.info("UserExpression edit Result:" + results)
+            log.info("UserExpression edit postUserExpressionResult:" + results)
             success(results,"UserExpression modified.")
         } else {
             error("UserExpression id is missing.")
@@ -569,7 +569,7 @@ class RestAPIController extends Rest {
 
         log.info(" in post feed")
         def postParams = JSON.parse(request.JSON.toString())
-        log.info("Post travellor Data:" + postParams)
+        log.info("Post traveller Data:" + postParams)
         ObjectId postId = mongoService.saveTravellerPost(postParams)
         Expando resultExpando = new Expando()
         resultExpando.postId = postId.toString()
@@ -1058,7 +1058,7 @@ class RestAPIController extends Rest {
     def getLikesForAnObject() {
         String likedObjectId = params.objectId
         String likedObjectType = params.objectType
-        List<Like> postLikes = mongoService.getUserLikes(likedObjectId, likedObjectType)
+        List<Like> postLikes = mongoService.getUserLikes(likedObjectId, likedObjectType.toLowerCase())
         LikeDTO[] likeDTOs = likeDTOMapper.mapLikeListToLikeDTOArray(postLikes)
         Expando postLikeExpando = new Expando()
         postLikeExpando.likes = likeDTOs
